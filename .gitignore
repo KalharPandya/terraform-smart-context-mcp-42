@@ -1,0 +1,15 @@
+node_modules/
+dist/
+
+# Terraform
+test-infra/.terraform/
+test-infra/.terraform.lock.hcl
+*.tfstate
+*.tfstate.backup
+*.tfplan
+
+# Env
+.env
+
+# Local Claude Code config
+.claude/

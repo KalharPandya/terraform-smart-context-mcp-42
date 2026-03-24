@@ -1,0 +1,21 @@
+{
+  "name": "terraform-mcp",
+  "version": "1.0.0",
+  "description": "MCP server exposing Terraform CLI as tools for Claude, Claude Code, Cursor, etc.",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.10.1",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.x",
+    "tsx": "^4.19.2",
+    "typescript": "^5.8.2"
+  }
+}
