@@ -11,5 +11,7 @@ test-infra/.terraform.lock.hcl
 # Env
 .env
 
-# Local Claude Code config
-.claude/
+# Local Claude Code personal config only — commands/ and skills/ are team-shared
+.claude/settings.json
+.claude/settings.local.json
+
