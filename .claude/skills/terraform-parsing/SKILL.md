@@ -1,3 +1,8 @@
+---
+name: terraform-parsing
+description: Use when reading, parsing, or discussing .tf files, HCL syntax, resources, modules, variables, outputs, or Terraform dependency declarations.
+---
+
 # SKILL: Terraform Parsing
 
 **Triggers when:** reading, parsing, or discussing `.tf` files.

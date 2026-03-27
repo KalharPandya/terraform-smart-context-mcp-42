@@ -1,3 +1,8 @@
+---
+name: mcp-server-patterns
+description: Use when building, reviewing, or discussing MCP tools — naming conventions, tool structure, error handling, input validation, or context efficiency rules.
+---
+
 # SKILL: MCP Server Patterns
 
 **Triggers when:** building, discussing, or reviewing MCP tools.

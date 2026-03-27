@@ -1,3 +1,8 @@
+---
+name: context-reduction
+description: Use when deciding what subgraph to return to an LLM — traversal depth, what to include or exclude, output format, and minimum viable context rules.
+---
+
 # SKILL: Context Reduction
 
 **Triggers when:** deciding what subgraph to return to an LLM.

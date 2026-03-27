@@ -1,3 +1,8 @@
+---
+name: dag-design
+description: Use when building, querying, designing, or discussing the DAG structure, node conventions, edge types, or graph traversal for Terraform resources.
+---
+
 # SKILL: DAG Design
 
 **Triggers when:** building, querying, or discussing the DAG structure.
