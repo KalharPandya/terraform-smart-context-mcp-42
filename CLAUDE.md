@@ -64,6 +64,22 @@ Trust these sources in this order. Higher = more authoritative.
 | `/commit-decision` | Commit a decision to `DECISIONS.md` immediately |
 | `/sync-context` | Update `NOTES.md` with current blockers and heads-up |
 | `/end-session` | Clean up and push before stopping work |
+| `/review-code` | Review a file or diff against decisions and skill conventions |
+| `/review-design` | Review a proposed approach before building it |
+| `/review-pr` | Full PR review across all changed files — gate before merge |
+
+---
+
+## Prompt Structure
+
+Use this format for every prompt to Claude during a session:
+
+```
+Context: [file or area you are working in]
+Goal: [what you are trying to achieve]
+Decision: [relevant DECISIONS.md entry — or "none"]
+Ask: [specific question or task]
+```
 
 ---
 
@@ -78,6 +94,7 @@ Check `.claude/skills/` for domain-specific knowledge.
 | `dag-design` | Building, querying, or discussing the DAG |
 | `mcp-server-patterns` | Building, discussing, or reviewing MCP tools |
 | `context-reduction` | Deciding what subgraph to return to an LLM |
+| `code-review` | Conducting any review — code, design, or PR |
 
 ---
 
