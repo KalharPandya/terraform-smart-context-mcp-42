@@ -61,14 +61,15 @@ All meaningful files in this repo. Update this section when files are added or r
 |------|---------|
 | `test-infra/main.tf` | Minimal null_resource for smoke testing. Not the experiment dummy infra. |
 
-### Experiments (to be created — tracked in issues #12–#16)
-| Path | Purpose |
-|------|---------|
-| `experiments/baseline/dummy-infra/` | 75-resource null_resource project simulating 3-tier AWS deployment. |
-| `experiments/baseline/prompts.json` | 10 task prompts + ground truth answers (3 easy, 4 medium, 3 hard). |
-| `experiments/baseline/runner.ts` | Anthropic SDK agentic loop — raw CLI mode baseline runner. |
-| `experiments/baseline/scorer.ts` | Category-specific scorer — outputs JSON + markdown summary table. |
-| `experiments/baseline/results/` | Experiment output (gitignored except `.gitkeep`). |
+### Experiments
+| Path | Purpose | Status |
+|------|---------|--------|
+| `experiments/baseline/dummy-infra/` | 75-resource null_resource project simulating 3-tier AWS deployment. | Done (#12) |
+| `experiments/baseline/dummy-infra/README.md` | Infrastructure structure, dependency chains, change log. | Done |
+| `experiments/baseline/prompts.json` | 10 task prompts + ground truth answers (3 easy, 4 medium, 3 hard). | Todo (#13) |
+| `experiments/baseline/runner.ts` | Anthropic SDK agentic loop — raw CLI mode baseline runner. | Todo (#14) |
+| `experiments/baseline/scorer.ts` | Category-specific scorer — outputs JSON + markdown summary table. | Todo (#15) |
+| `experiments/baseline/results/` | Experiment output (gitignored except `.gitkeep`). | Created |
 
 ### Claude Configuration (`.claude/`)
 | File | Purpose |

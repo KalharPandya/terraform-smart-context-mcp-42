@@ -104,6 +104,25 @@ terraform {
 
 Run `terraform init` inside `test-infra/` before testing state/output tools.
 
+## Experiments
+
+The `experiments/` directory contains baseline experiments proving the need for MCP tools.
+
+### Dummy Infrastructure (`experiments/baseline/dummy-infra/`)
+
+A 75-resource Terraform project using only `null_resource` with trigger attribute references
+to simulate a production 3-tier AWS deployment. Generates 4041 lines of pretty-printed JSON
+state (~33K tokens) — too large for any LLM to process raw.
+
+Six modules: networking (15), security (14), compute (16), database (10), loadbalancer (10), monitoring (10).
+
+```bash
+cd experiments/baseline/dummy-infra
+terraform init && terraform apply -auto-approve  # instant, zero charges
+```
+
+See [`experiments/baseline/dummy-infra/README.md`](experiments/baseline/dummy-infra/README.md) for full details.
+
 ## Development
 
 ```bash
