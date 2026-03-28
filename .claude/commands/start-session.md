@@ -64,16 +64,24 @@ what `git log` already shows — if git shows it committed, my note may be stale
 
 ---
 
-**7. Check the GitHub Project board.**
+**7. Fetch GitHub issues and project board state.**
+
+Run both commands:
 
 ```bash
-gh project item-list 1 --owner KalharPandya
+GH="/c/Program Files/GitHub CLI/gh.exe"
+# GH_TOKEN must be set in your shell environment (not stored here)
+
+# Issues assigned to me only
+"$GH" issue list --repo KalharPandya/terraform-smart-context-mcp-42 \
+  --state open --assignee @me --limit 50 \
+  --json number,title,labels,state
 ```
 
 From this output, tell me:
-- What is currently **In Progress** and who owns it
-- Anything that moved to **Done** since last session
-- Decision issues (#7–#11) that are still open — flag these if we have enough info to resolve them today
+- Which of my assigned issues are open right now
+- Any that look like they should already be **In Progress** based on what I'm working on
+- Decision issues (#7–#11) in my list — flag if we have enough info to resolve today
 
 ---
 
