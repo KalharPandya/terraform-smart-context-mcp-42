@@ -24,9 +24,10 @@ Trust these sources in this order. Higher = more authoritative.
 | # | Source | Trust | Notes |
 |---|--------|-------|-------|
 | 1 | `git log` | Highest | Always current, automatic, never wrong |
-| 2 | `DECISIONS.md` | Ground truth | What we agreed on. Append only. |
-| 3 | `NOTES.md` | Low | Only for things git cannot tell you |
-| 4 | `CHANGELOG.md` | Reference | Shipped work only. Read only. |
+| 2 | `GOAL.md` | Ground truth | Why we exist. Read before DECISIONS.md. |
+| 3 | `DECISIONS.md` | Ground truth | What we agreed on. Append only. |
+| 4 | `NOTES.md` | Low | Only for things git cannot tell you |
+| 5 | `CHANGELOG.md` | Reference | Shipped work only. Read only. |
 
 **If git log and NOTES.md disagree — trust git log.**
 
@@ -34,10 +35,11 @@ Trust these sources in this order. Higher = more authoritative.
 
 ## Reading Priority at Session Start
 
-1. Read **teammates' NOTES.md sections first** — their context is more important than yours
-2. Read `DECISIONS.md` fully — non-negotiable
-3. Check `git log --oneline --since="48 hours ago" --all`
-4. Read **your own NOTES.md section last** — treat it as a hint, verify against git log
+1. Read `GOAL.md` — understand why the project exists before reading anything else
+2. Read **teammates' NOTES.md sections first** — their context is more important than yours
+3. Read `DECISIONS.md` fully — non-negotiable
+4. Check `git log --oneline --since="48 hours ago" --all`
+5. Read **your own NOTES.md section last** — treat it as a hint, verify against git log
 
 **Your own yesterday context is the least important thing you read.**
 

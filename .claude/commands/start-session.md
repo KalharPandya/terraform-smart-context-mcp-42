@@ -38,14 +38,21 @@ Tell me which files on my current branch differ from main.
 
 ---
 
-**4. Read DECISIONS.md fully.**
+**4. Read GOAL.md.**
+
+Read it fully. If anything you are about to work on conflicts with the v1 scope,
+the experiments, or the design principle, flag it before proceeding.
+
+---
+
+**5. Read DECISIONS.md fully.**
 
 Do not skim. Flag any decisions that are relevant to what I might work on today.
 If there are open questions in DECISIONS.md that are unresolved, call them out explicitly.
 
 ---
 
-**5. Read NOTES.md — teammates' sections first, my section last.**
+**6. Read NOTES.md — teammates' sections first, my section last.**
 
 From NOTES.md, flag:
 - Any Open Blockers that affect me or files I might touch
@@ -57,7 +64,7 @@ what `git log` already shows — if git shows it committed, my note may be stale
 
 ---
 
-**6. Give me a single consolidated summary.**
+**7. Give me a single consolidated summary.**
 
 Cover exactly these things:
 - What changed in the last 48 hours across the team
@@ -69,7 +76,7 @@ Keep it tight. One paragraph per bullet is enough.
 
 ---
 
-**7. Ask me what I am working on today.**
+**8. Ask me what I am working on today.**
 
 After the summary, ask: "What are you working on today?"
 
