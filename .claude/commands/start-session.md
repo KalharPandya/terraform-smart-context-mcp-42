@@ -70,7 +70,6 @@ Run both commands:
 
 ```bash
 GH="/c/Program Files/GitHub CLI/gh.exe"
-# GH_TOKEN must be set in your shell environment (not stored here)
 
 # Issues assigned to me only
 "$GH" issue list --repo KalharPandya/terraform-smart-context-mcp-42 \
