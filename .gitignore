@@ -4,9 +4,15 @@ dist/
 # Terraform
 test-infra/.terraform/
 test-infra/.terraform.lock.hcl
+experiments/baseline/dummy-infra/.terraform/
+experiments/baseline/dummy-infra/.terraform.lock.hcl
 *.tfstate
 *.tfstate.backup
 *.tfplan
+
+# Experiment results (keep .gitkeep)
+experiments/baseline/results/*
+!experiments/baseline/results/.gitkeep
 
 # Env
 .env
