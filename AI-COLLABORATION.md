@@ -10,11 +10,12 @@ Read this fully before your first session. Keep it open as a reference.
 1. [Philosophy](#philosophy)
 2. [System Overview](#system-overview)
 3. [File Hierarchy](#file-hierarchy)
-4. [Daily Workflow](#daily-workflow)
-5. [Commands](#commands)
-6. [Skills](#skills)
-7. [Team Rules](#team-rules)
-8. [Quick Reference](#quick-reference)
+4. [Session Flow](#session-flow)
+5. [Daily Workflow](#daily-workflow)
+6. [Commands](#commands)
+7. [Skills](#skills)
+8. [Team Rules](#team-rules)
+9. [Quick Reference](#quick-reference)
 
 ---
 
@@ -86,6 +87,93 @@ A warning board for things that git cannot communicate. Three sections only: Ope
 
 ### CHANGELOG.md
 Records shipped features. Never edit this manually. It is updated only via `/end-session` when work ships. If you find yourself wanting to edit it directly, stop — that is a sign you are doing it wrong.
+
+---
+
+## Session Flow
+
+Every session follows the same five phases. Do not skip phases — each one
+protects the next.
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  PHASE 1 — START                                                │
+│                                                                 │
+│  /start-session                                                 │
+│    ├── git pull                                                 │
+│    ├── git log last 48h → what changed, who touched what        │
+│    ├── DECISIONS.md → load all team agreements                  │
+│    └── NOTES.md → teammates first, your section last           │
+│                                                                 │
+│  → Tell Claude what you are working on today                    │
+└───────────────────────────┬─────────────────────────────────────┘
+                            │
+                            ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  PHASE 2 — BEFORE BUILDING                                      │
+│                                                                 │
+│  /review-design                                                 │
+│    ├── Submit your proposed approach using the prompt structure │
+│    ├── Claude checks DECISIONS.md for conflicts                 │
+│    ├── Claude checks relevant domain skills                     │
+│    ├── Claude surfaces any implied unresolved decisions         │
+│    └── Verdict: PASS → continue │ FAIL → revise first          │
+│                                                                 │
+│  /commit-decision  (for any implied decisions surfaced above)   │
+└───────────────────────────┬─────────────────────────────────────┘
+                            │
+                            ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  PHASE 3 — DURING DEVELOPMENT                         (repeat) │
+│                                                                 │
+│  Every Claude prompt uses the team prompt structure:            │
+│    Context / Goal / Decision / Ask                              │
+│                                                                 │
+│  After ANY design decision →  /commit-decision immediately      │
+│                                                                 │
+│  If you become blocked →      /sync-context                     │
+│  If sharing a heads-up →      /sync-context                     │
+└───────────────────────────┬─────────────────────────────────────┘
+                            │
+                            ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  PHASE 4 — BEFORE COMMITTING / MERGING                          │
+│                                                                 │
+│  /review-code   ← run on every file before committing           │
+│    ├── BLOCKING finding → fix before commit                     │
+│    ├── WARNING finding  → fix or log as blocker                 │
+│    └── PASS             → commit                                │
+│                                                                 │
+│  /review-pr     ← run before any merge to main                  │
+│    ├── FAIL             → resolve all BLOCKING, re-review       │
+│    ├── PASS WITH WARNINGS → decide: fix or log as Heads Up     │
+│    └── PASS             → merge                                 │
+└───────────────────────────┬─────────────────────────────────────┘
+                            │
+                            ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  PHASE 5 — END                                                  │
+│                                                                 │
+│  /end-session                                                   │
+│    ├── Commit or stash any open work                            │
+│    ├── /sync-context → clear resolved blockers and questions    │
+│    ├── /commit-decision → for any answered Live Questions       │
+│    ├── git log -5 → summary of what you shipped today           │
+│    └── Push → teammates get your context on next git pull       │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Decision points at a glance
+
+| Moment | Action |
+|--------|--------|
+| Start of session | `/start-session` — non-negotiable |
+| Before writing any code | `/review-design` |
+| Any design decision made | `/commit-decision` — immediately |
+| Blocked or have a heads-up | `/sync-context` |
+| Before committing a file | `/review-code` |
+| Before merging to main | `/review-pr` |
+| End of session | `/end-session` — non-negotiable |
 
 ---
 
