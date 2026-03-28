@@ -37,3 +37,7 @@ Move each question to the Decisions section the moment it is answered.
 ## Decisions
 
 <!-- First entry goes here. Format: [NAME DATE] decision summary -->
+[ShahParin 2026-03-28] Dummy infra uses null_resource with trigger attribute references to simulate real AWS dependency edges with zero cloud charges
+[ShahParin 2026-03-28] Dummy infra is structured as 75 resources across 6 modules: networking=15, security=14, compute=16, database=10, loadbalancer=10, monitoring=10
+[ShahParin 2026-03-28] State size target is 4000+ pretty-printed JSON lines, achieved by adding 14+ metadata trigger keys per resource
+[ShahParin 2026-03-28] Baseline experiment compares raw CLI vs MCP on five metrics: time taken, tokens utilized, accuracy, tool calls, and context efficiency (tokens per correct answer)
