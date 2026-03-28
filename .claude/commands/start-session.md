@@ -64,7 +64,20 @@ what `git log` already shows — if git shows it committed, my note may be stale
 
 ---
 
-**7. Give me a single consolidated summary.**
+**7. Check the GitHub Project board.**
+
+```bash
+gh project item-list 1 --owner KalharPandya
+```
+
+From this output, tell me:
+- What is currently **In Progress** and who owns it
+- Anything that moved to **Done** since last session
+- Decision issues (#7–#11) that are still open — flag these if we have enough info to resolve them today
+
+---
+
+**8. Give me a single consolidated summary.**
 
 Cover exactly these things:
 - What changed in the last 48 hours across the team
@@ -76,9 +89,11 @@ Keep it tight. One paragraph per bullet is enough.
 
 ---
 
-**8. Ask me what I am working on today.**
+**9. Ask me what I am working on today.**
 
 After the summary, ask: "What are you working on today?"
 
 Then, given my answer, flag any decisions, blockers, or heads-up entries in the
 context files that are directly relevant to that specific work.
+
+If my answer maps to a GitHub issue, remind me to move it to **In Progress** on the board.

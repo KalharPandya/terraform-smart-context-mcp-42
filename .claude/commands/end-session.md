@@ -55,7 +55,26 @@ For each one that is now answered:
 
 ---
 
-**6. Show a summary of today's work.**
+**6. Sync the GitHub Project board.**
+
+For any issue you completed this session, move it to **Done**:
+
+```bash
+gh project item-edit --project-id PVT_kwHOA_Tuhs4BTFq_ \
+  --id <PVTI_item_id> --field-id PVTSSF_lAHOA_Tuhs4BTFq_zhAbqaA \
+  --single-select-option-id 98236657
+```
+
+For any issue you started but did not finish, confirm it is set to **In Progress** (option id: `47fc9ee4`).
+
+If you are unsure which item IDs to use, run:
+```bash
+gh project item-list 1 --owner KalharPandya
+```
+
+---
+
+**7. Show a summary of today's work.**
 
 ```
 git log --oneline -5
@@ -65,6 +84,6 @@ Show me the last 5 commits. This is my summary of what I shipped today.
 
 ---
 
-**7. Confirm clean close.**
+**8. Confirm clean close.**
 
 "Session ended cleanly. Teammates will see your context on their next `git pull`."

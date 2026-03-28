@@ -70,9 +70,11 @@ Trust these sources in this order. Higher means more authoritative.
 | Priority | Source | Trust Level | Notes |
 |----------|--------|-------------|-------|
 | 1 | `git log` | Highest | Automatic, timestamped, never wrong |
-| 2 | `DECISIONS.md` | Ground truth | What the team agreed on — append only |
-| 3 | `NOTES.md` | Low | Only for things git cannot tell you |
-| 4 | `CHANGELOG.md` | Reference | Shipped work only — read only |
+| 2 | `GOAL.md` | Ground truth | Why we exist — read before anything else |
+| 3 | `DECISIONS.md` | Ground truth | What the team agreed on — append only |
+| 4 | `NOTES.md` | Low | Only for things git cannot tell you |
+| 5 | `CHANGELOG.md` | Reference | Shipped work only — read only |
+| 6 | GitHub Project #1 | Live state | Issue status, sprint, priority |
 
 **If git log and NOTES.md disagree, trust git log and update NOTES.md.**
 
@@ -87,6 +89,24 @@ A warning board for things that git cannot communicate. Three sections only: Ope
 
 ### CHANGELOG.md
 Records shipped features. Never edit this manually. It is updated only via `/end-session` when work ships. If you find yourself wanting to edit it directly, stop — that is a sign you are doing it wrong.
+
+### GitHub Project #1
+**URL:** https://github.com/users/KalharPandya/projects/1
+
+Tracks all issues for this repo with status, priority, size, and sprint assignment. The project board is the live view of what is happening right now — git log shows what happened, the board shows what is happening.
+
+**Board workflow:**
+- When you pick up an issue → move it to **In Progress**
+- When the work is committed and pushed → move it to **Done**
+- Decision issues (#7–#11) → move to Done when `/commit-decision` is run for them
+
+**Fields:**
+| Field | Options |
+|-------|---------|
+| Status | Todo / In Progress / Done |
+| Priority | P0 (blocks everything) / P1 (this sprint) / P2 (backlog) |
+| Size | XS / S / M / L / XL |
+| Iteration | Sprint 1 (Mar 28) / Sprint 2 (Apr 11) / Sprint 3 (Apr 25) |
 
 ---
 

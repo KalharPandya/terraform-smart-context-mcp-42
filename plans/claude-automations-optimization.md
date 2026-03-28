@@ -6,11 +6,45 @@ Project 42 (Terraform MCP Server) has a strong collaboration structure (7 comman
 
 This plan adds: 2 hooks, 2 skills, 1 subagent, GitHub MCP server, and 11 GitHub issues.
 
-**Current state:** Docker is available. `gh` CLI is NOT installed. `context7` plugin is already enabled globally (skip). No `.mcp.json`, no `.claude/agents/`, no hooks configured.
+**Current state:** Docker is available. `gh` CLI installed (v2.89.0), authenticated as KalharPandya. `context7` plugin already enabled globally (skip). No `.mcp.json`, no `.claude/agents/`, no hooks configured.
+
+## GitHub Project Board
+
+**Project:** [42](https://github.com/users/KalharPandya/projects/1) — all 11 issues are already added.
+
+| Field | Values | IDs (for `gh` API) |
+|-------|--------|--------------------|
+| Status | Todo / In Progress / Done | `f75ad846` / `47fc9ee4` / `98236657` |
+| Priority | P0 / P1 / P2 | `e5ec1504` / `e0db157d` / `d144e196` |
+| Size | XS / S / M / L / XL | `cf191044` / `da5c4432` / `7f68e0d8` / `2735bfb1` / `2f59d72b` |
+| Status field ID | — | `PVTSSF_lAHOA_Tuhs4BTFq_zhAbqaA` |
+| Priority field ID | — | `PVTSSF_lAHOA_Tuhs4BTFq_zhAbqdE` |
+| Size field ID | — | `PVTSSF_lAHOA_Tuhs4BTFq_zhAbqdI` |
+| Project node ID | — | `PVT_kwHOA_Tuhs4BTFq_` |
+
+**Board rule for every phase:** move the linked issue to **In Progress** when starting, **Done** when committed and pushed.
+
+```bash
+# Move issue to In Progress (replace PVTI_... with the item's node ID)
+gh project item-edit --project-id PVT_kwHOA_Tuhs4BTFq_ \
+  --id <PVTI_item_id> \
+  --field-id PVTSSF_lAHOA_Tuhs4BTFq_zhAbqaA \
+  --single-select-option-id 47fc9ee4
+
+# Move issue to Done
+gh project item-edit --project-id PVT_kwHOA_Tuhs4BTFq_ \
+  --id <PVTI_item_id> \
+  --field-id PVTSSF_lAHOA_Tuhs4BTFq_zhAbqaA \
+  --single-select-option-id 98236657
+```
 
 ---
 
 ## Phase 1: Create Hook Scripts
+
+**GitHub issues:** #1 (tsc hook), #2 (protect hook)
+**Item IDs:** `PVTI_lAHOA_Tuhs4BTFq_zgokb5s` (#1), `PVTI_lAHOA_Tuhs4BTFq_zgokb5w` (#2)
+**Board action:** Move both to In Progress when starting. Move to Done after Phase 2 is complete.
 
 ### File: `.claude/hooks/tsc-check.mjs` (NEW)
 PostToolUse hook — runs `tsc --noEmit` after any `.ts` file edit.
@@ -52,6 +86,10 @@ Add `hooks` key alongside existing `permissions`. Preserve all existing permissi
 
 ## Phase 3: Create Skills
 
+**GitHub issues:** #3 (add-tool skill), #4 (scope-guard skill)
+**Item IDs:** `PVTI_lAHOA_Tuhs4BTFq_zgokb50` (#3), `PVTI_lAHOA_Tuhs4BTFq_zgokb54` (#4)
+**Board action:** Move to In Progress when starting each skill. Move to Done after the SKILL.md is committed.
+
 ### File: `.claude/skills/add-tool/SKILL.md` (NEW)
 User-invocable `/add-tool` — scaffolds a new MCP tool block in `src/index.ts`.
 
@@ -77,6 +115,10 @@ Outputs `SCOPE ALERT` with A/B choice before any implementation proceeds.
 
 ## Phase 4: Create Subagent
 
+**GitHub issue:** #5 (tool-schema-reviewer)
+**Item ID:** `PVTI_lAHOA_Tuhs4BTFq_zgokb58`
+**Board action:** Move to In Progress when starting. Move to Done after agent file is committed.
+
 ### Directory: `.claude/agents/` (NEW)
 ### File: `.claude/agents/tool-schema-reviewer.md` (NEW)
 
@@ -95,6 +137,10 @@ Output: per-tool BLOCKING/WARNING/PASS table + verdict.
 ---
 
 ## Phase 5: GitHub MCP Server
+
+**GitHub issue:** #6 (GitHub MCP)
+**Item ID:** `PVTI_lAHOA_Tuhs4BTFq_zgokb6A`
+**Board action:** Move to In Progress when starting. Move to Done after `.mcp.json` is committed and pushed.
 
 ### File: `.mcp.json` (NEW — project root, committed to git for team sharing)
 

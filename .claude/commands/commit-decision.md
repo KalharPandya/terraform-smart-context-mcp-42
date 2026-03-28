@@ -75,6 +75,21 @@ git push
 
 ---
 
-**9. Confirm to me:**
+**9. Check if this decision closes a GitHub issue.**
+
+If the decision answers one of the open questions tracked as GitHub issues (#7–#11):
+- Move that issue to **Done** on the GitHub Project board
+- Close the issue with a comment referencing the DECISIONS.md entry
+
+```bash
+gh issue close <number> --repo KalharPandya/terraform-smart-context-mcp-42 \
+  --comment "Resolved via DECISIONS.md: [NAME DATE] <decision summary>"
+```
+
+If there is no corresponding issue, skip this step.
+
+---
+
+**10. Confirm to me:**
 
 "Pushed — teammates will see this decision on their next `git pull`."

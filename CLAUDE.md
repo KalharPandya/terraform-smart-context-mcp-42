@@ -28,8 +28,26 @@ Trust these sources in this order. Higher = more authoritative.
 | 3 | `DECISIONS.md` | Ground truth | What we agreed on. Append only. |
 | 4 | `NOTES.md` | Low | Only for things git cannot tell you |
 | 5 | `CHANGELOG.md` | Reference | Shipped work only. Read only. |
+| 6 | GitHub Project #1 | Live state | Issue status, sprint assignment, priority |
 
 **If git log and NOTES.md disagree — trust git log.**
+
+## GitHub Project
+
+**Project:** [42](https://github.com/users/KalharPandya/projects/1) — tracks all issues for this repo.
+
+| Field | Values | Used for |
+|-------|--------|----------|
+| Status | Todo / In Progress / Done | What is being worked on right now |
+| Priority | P0 / P1 / P2 | P0 = blocks everything, P1 = this sprint, P2 = backlog |
+| Size | XS / S / M / L / XL | Effort estimate |
+| Iteration | Sprint 1 (Mar 28) / Sprint 2 (Apr 11) / Sprint 3 (Apr 25) | 2-week cycles |
+
+**Rules:**
+- Move an issue to **In Progress** the moment you start work on it
+- Move it to **Done** when the work is committed and pushed
+- Set **Priority** when creating or picking up an issue
+- Decision issues (#7–#11) move to Done when `/commit-decision` is run for them
 
 ---
 
