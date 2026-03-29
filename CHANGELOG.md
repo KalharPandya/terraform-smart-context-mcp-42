@@ -31,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 5 architecture decisions resolving DECISIONS.md Q1-Q5: node model (resources + module containers), edge model (explicit + implicit, deduplicated), parser (terraform show -json for v1), tool list (12 tools), output shape (summary string on every response).
 - GitHub issues #17-#23 for 7 implementation phases of the tool set plan, all assigned to KalharPandya.
 - Progress report (`reports/progress-report.md`): 10-section Markdown report covering problem, team, experiments, project plan (Mermaid Gantt), Claude Code-first development workflow, objectives, related work (10 references), hypothesis (original + revised), methodology, preliminary results (Mermaid charts), and impact. Closes #24.
+- Elevator pitch deck and script (`pitch/`): single-page HTML slide (`slides.html`) with 3-column layout covering problem, solution, and baseline proof — plus solo presenter script (`script.md`) with delivery notes for 2-minute video recording.
 
 ### Changed
 - CLAUDE.md: added `reports/` to file map, updated sprint timeline to reflect Apr 10 deadline, added implementation issues note.
