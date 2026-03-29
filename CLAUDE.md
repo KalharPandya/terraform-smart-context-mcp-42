@@ -66,10 +66,14 @@ All meaningful files in this repo. Update this section when files are added or r
 |------|---------|--------|
 | `experiments/baseline/dummy-infra/` | 75-resource null_resource project simulating 3-tier AWS deployment. | Done (#12) |
 | `experiments/baseline/dummy-infra/README.md` | Infrastructure structure, dependency chains, change log. | Done |
-| `experiments/baseline/prompts.json` | 10 task prompts + ground truth answers (3 easy, 4 medium, 3 hard). | Todo (#13) |
-| `experiments/baseline/runner.ts` | Anthropic SDK agentic loop — raw CLI mode baseline runner. | Todo (#14) |
-| `experiments/baseline/scorer.ts` | Category-specific scorer — outputs JSON + markdown summary table. | Todo (#15) |
-| `experiments/baseline/results/` | Experiment output (gitignored except `.gitkeep`). | Created |
+| `experiments/baseline/prompts.json` | 10 task prompts + ground truth answers (3 easy, 4 medium, 3 hard). | Done (#13) |
+| `experiments/baseline/runner.ts` | Claude Code CLI headless runner — raw CLI mode baseline. | Done (#14) |
+| `experiments/baseline/scorer.ts` | Category-specific scorer — outputs JSON + markdown summary table. | Done (#15) |
+| `experiments/baseline/visualize.ts` | Chart.js HTML dashboard generator — 6 charts from scored results. | Done |
+| `experiments/baseline/assemble-results.ts` | Merges manual Claude Code run answers into scorer-compatible JSON. | Done |
+| `experiments/baseline/manual-run-prompt.md` | Instructions for manual Claude Code experiment runs. | Done |
+| `experiments/baseline/RAW_Claude_Code_Experiments.md` | Baseline experiment results, findings, and analysis. | Done (#16) |
+| `experiments/baseline/results/` | Experiment output (gitignored except `.gitkeep`). | Has results |
 
 ### Claude Configuration (`.claude/`)
 | File | Purpose |
