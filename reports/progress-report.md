@@ -393,32 +393,34 @@ All experiments share a common infrastructure:
 
 ### 8.4 Experiment 3: Cross-Model Portability
 
-**Design:** Same 10 prompts through the MCP server, connected to models across proprietary and open-source providers. We select models with native tool-calling / function-calling support:
+**Design:** Same 10 prompts through the MCP server, connected to 15 models across proprietary and open-source providers. All selected models have native tool-calling / function-calling support.
 
-**Proprietary Models:**
+**Proprietary Models (9):**
 
 | Model | Provider | Why Included |
 |-------|----------|-------------|
-| Claude Sonnet 4 | Anthropic | Baseline model, native MCP support |
-| Claude Haiku 4.5 | Anthropic | Smaller/faster, tests if tool design compensates for model size |
-| GPT-4.1 | OpenAI | Latest OpenAI flagship with improved function calling |
-| GPT-4.1 mini | OpenAI | Cost-optimized variant, tests efficiency at lower price point |
-| o4-mini | OpenAI | Reasoning model, tests structured thinking with tool use |
-| Gemini 2.5 Pro | Google | Latest Gemini with extended context and tool use |
-| Gemini 2.5 Flash | Google | Fast/cheap variant, tests if MCP tools reduce need for large models |
+| Claude Sonnet 4.6 | Anthropic | Baseline model, native MCP support (Feb 2026) |
+| Claude Haiku 4.5 | Anthropic | Budget tier, tests if MCP tools compensate for smaller model |
+| GPT-5.4 | OpenAI | Latest OpenAI flagship, complex reasoning + coding |
+| GPT-5.4 mini | OpenAI | Cost-optimized, lower latency variant |
+| o3 | OpenAI | Reasoning model, math/science/coding focus |
+| Gemini 2.5 Pro | Google | Latest Gemini, extended context + tool use |
+| Gemini 2.5 Flash | Google | Fast/cheap workhorse, advanced reasoning |
+| Grok 4.1 Fast | xAI | Best agentic tool calling, 2M context window |
+| MiniMax-M2.7 | MiniMax | 1M context, agentic productivity and multi-step planning |
 
-**Open-Source Models:**
+**Open-Source Models (6):**
 
-| Model | Provider/Source | Why Included |
-|-------|----------------|-------------|
-| Llama 4 Scout (17B active) | Meta | Latest open-source with native tool calling, MoE architecture |
-| Llama 4 Maverick (17B active) | Meta | Higher-quality Llama 4 variant, tests open-source ceiling |
-| Qwen 3 (32B) | Alibaba | Strong tool-calling benchmark scores, multilingual |
-| Mistral Medium 3 | Mistral AI | European open-weight model with function calling |
-| DeepSeek-V3 | DeepSeek | MoE model with strong coding/reasoning, 671B total params |
-| Command R+ | Cohere | Designed for RAG and tool use, enterprise-focused |
+| Model | Provider | Why Included |
+|-------|----------|-------------|
+| Qwen3.5-397B-A17B | Alibaba | Latest flagship MoE, multimodal reasoning + tool calling |
+| DeepSeek-V3.2 | DeepSeek | Strong reasoning, IMO/IOI gold medal results, agentic tool-use pipeline |
+| Llama 4 Maverick (17B active) | Meta | MoE architecture, native tool calling |
+| GLM-4.5-Air | THUDM/Zhipu | Optimized for tool use and web browsing |
+| MiMo-V2-Flash | Xiaomi | Trained explicitly for agentic and tool-calling workflows |
+| Mistral Medium 3 | Mistral AI | Native function calling without special prompting |
 
-**Tradeoff evaluated:** Whether the MCP abstraction is model-agnostic or biased toward specific providers. If smaller/cheaper models (Haiku, GPT-4.1 mini, Gemini Flash, Qwen 3) achieve comparable accuracy to flagship models when given structured MCP tools, it validates that **tool design matters more than model size** for infrastructure tasks.
+**Tradeoff evaluated:** Whether the MCP abstraction is model-agnostic or biased toward specific providers. If smaller/cheaper models (Haiku, GPT-5.4 mini, Gemini Flash, MiMo-V2-Flash) achieve comparable accuracy to flagship models when given structured MCP tools, it validates that **tool design matters more than model size** for infrastructure tasks.
 
 ### 8.5 Scoring Framework
 
