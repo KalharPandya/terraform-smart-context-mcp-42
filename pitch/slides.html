@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Project 42 — Pitch</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0d0d0d;
+      color: #f0f0f0;
+      font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+      width: 1280px;
+      height: 720px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── HEADER ── */
+    header {
+      height: 56px;
+      min-height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 52px;
+      border-bottom: 1px solid #1a1a1a;
+    }
+
+    .logo {
+      font-size: 11px;
+      color: #4ade80;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+    }
+
+    .tagline {
+      font-size: 12px;
+      color: #333;
+      letter-spacing: 1px;
+    }
+
+    /* ── MAIN ── */
+    main {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 1px 1.4fr 1px 1fr;
+      overflow: hidden;
+    }
+
+    .divider-v { background: #1a1a1a; }
+
+    /* ── CARD ── */
+    .card {
+      padding: 28px 40px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      overflow: hidden;
+    }
+
+    .card-label {
+      font-size: 9px;
+      color: #4ade80;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+    }
+
+    /* ── PROBLEM ── */
+    .problem-headline {
+      font-size: 24px;
+      font-weight: 700;
+      line-height: 1.3;
+      color: #f0f0f0;
+    }
+
+    .problem-headline span { color: #f87171; }
+
+    .problem-sub {
+      font-size: 12px;
+      color: #6b7280;
+      line-height: 1.7;
+    }
+
+    .problem-sub strong { color: #9ca3af; }
+
+    .code-block {
+      background: #0a0a0a;
+      border: 1px solid #1e1e1e;
+      border-radius: 6px;
+      padding: 14px 18px;
+      font-size: 11px;
+      line-height: 1.8;
+      flex: 1;
+    }
+
+    .code-block .prompt { color: #4ade80; display: block; margin-bottom: 4px; }
+    .code-block .hi     { color: #60a5fa; }
+    .code-block .dim    { color: #1e1e1e; }
+    .code-block .more   { color: #f87171; }
+
+    /* ── SOLUTION ── */
+    .solution-headline {
+      font-size: 20px;
+      font-weight: 700;
+      color: #f0f0f0;
+      line-height: 1.4;
+    }
+
+    .solution-headline span { color: #4ade80; }
+
+    /* ── DIAGRAM ── */
+    .diagram {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 12px;
+    }
+
+    /* Step row: number + box + description */
+    .d-step {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .d-num {
+      font-size: 11px;
+      color: #2a2a2a;
+      font-weight: 700;
+      width: 18px;
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    .d-box {
+      background: #111;
+      border: 1px solid #2a2a2a;
+      border-radius: 6px;
+      padding: 10px 16px;
+      font-size: 12px;
+      color: #9ca3af;
+      white-space: nowrap;
+      min-width: 140px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    .d-box.green {
+      border-color: #4ade80;
+      color: #4ade80;
+      background: #0d1f13;
+    }
+
+    .d-box.result {
+      border-color: #3b82f6;
+      color: #60a5fa;
+      background: #0d1220;
+    }
+
+    .d-desc {
+      font-size: 11px;
+      color: #444;
+      line-height: 1.5;
+    }
+
+    .d-desc strong { color: #6b7280; }
+
+    /* Connector between steps */
+    .d-connector {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding-left: 32px;
+    }
+
+    .d-vert {
+      width: 1px;
+      height: 16px;
+      background: #222;
+      margin-left: 69px;
+    }
+
+    .tools-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .tool-chip {
+      background: #111;
+      border: 1px solid #1e1e1e;
+      border-radius: 4px;
+      padding: 4px 10px;
+      font-size: 10px;
+      color: #4b5563;
+    }
+
+    .compat {
+      font-size: 11px;
+      color: #333;
+    }
+
+    .compat span { color: #4ade80; }
+
+    /* ── PROOF ── */
+    .num-block {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      flex: 1;
+      justify-content: space-between;
+    }
+
+    .num-row {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 16px 0;
+      border-bottom: 1px solid #1a1a1a;
+    }
+
+    .num-row:first-child { padding-top: 0; }
+    .num-row:last-child  { border-bottom: none; padding-bottom: 0; }
+
+    .num-value {
+      font-size: 44px;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .num-value.green { color: #4ade80; }
+    .num-value.red   { color: #f87171; }
+
+    .num-title {
+      font-size: 13px;
+      color: #f0f0f0;
+      font-weight: 600;
+    }
+
+    .num-sub {
+      font-size: 11px;
+      color: #444;
+      line-height: 1.5;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      height: 52px;
+      min-height: 52px;
+      border-top: 1px solid #1a1a1a;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 52px;
+    }
+
+    .close-line {
+      font-size: 14px;
+      font-weight: 700;
+      color: #6b7280;
+    }
+
+    .close-line span { color: #4ade80; }
+
+    .footer-meta {
+      font-size: 10px;
+      color: #222;
+      letter-spacing: 2px;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="logo">Project 42</div>
+    <div class="tagline">MCP Server · Terraform · Context Reduction</div>
+  </header>
+
+  <main>
+
+    <!-- PROBLEM -->
+    <div class="card">
+      <div class="card-label">The Problem</div>
+
+      <div class="problem-headline">
+        AI agents <span>drown</span><br/>in raw infrastructure.
+      </div>
+
+      <div class="problem-sub">
+        Ask any agent about your cloud environment<br/>
+        and it runs <strong>terraform show -json</strong> —
+      </div>
+
+      <div class="code-block">
+        <span class="prompt">$ terraform show -json</span>
+        <span class="dim">{</span><br/>
+        <span class="dim">&nbsp;&nbsp;"format_version": "1.0",</span><br/>
+        <span class="hi">&nbsp;&nbsp;"address":</span><span class="dim"> "aws_vpc.main",</span><br/>
+        <span class="dim">&nbsp;&nbsp;"values": { ... },</span><br/>
+        <span class="dim">&nbsp;&nbsp;"depends_on": [ ... ],</span><br/>
+        <span class="dim">&nbsp;&nbsp;"sensitive_values": { ... },</span><br/>
+        <span class="more">&nbsp;&nbsp;··· 5,994 more lines</span>
+      </div>
+
+      <div class="problem-sub">
+        No filtering. No structure. No graph.<br/>
+        <strong>The entire environment — every time.</strong>
+      </div>
+    </div>
+
+    <div class="divider-v"></div>
+
+    <!-- SOLUTION -->
+    <div class="card">
+      <div class="card-label">The Solution</div>
+
+      <div class="solution-headline">
+        One query.<br/>
+        <span>Exactly what you need.</span><br/>
+        Nothing else.
+      </div>
+
+      <div class="diagram">
+
+        <div class="d-step">
+          <div class="d-num">1</div>
+          <div class="d-box">🤖 AI Agent</div>
+          <div class="d-desc">Asks a specific question —<br/><strong>get_dependencies("aws_rds.prod")</strong></div>
+        </div>
+
+        <div class="d-vert"></div>
+
+        <div class="d-step">
+          <div class="d-num">2</div>
+          <div class="d-box green">⚡ MCP Server</div>
+          <div class="d-desc">Parses Terraform state,<br/><strong>builds + filters the dependency graph</strong></div>
+        </div>
+
+        <div class="d-vert"></div>
+
+        <div class="d-step">
+          <div class="d-num">3</div>
+          <div class="d-box">🕸️ DAG Traversal</div>
+          <div class="d-desc">Walks only the relevant subgraph —<br/><strong>not the full 6,000-line state</strong></div>
+        </div>
+
+        <div class="d-vert"></div>
+
+        <div class="d-step">
+          <div class="d-num">4</div>
+          <div class="d-box result">✅ Clean Answer</div>
+          <div class="d-desc">Typed nodes, edges, summary.<br/><strong>Exactly what was asked. Nothing else.</strong></div>
+        </div>
+
+      </div>
+
+      <div class="tools-row">
+        <div class="tool-chip">list_resources</div>
+        <div class="tool-chip">get_dependencies</div>
+        <div class="tool-chip">filter_resources</div>
+        <div class="tool-chip">drift detection</div>
+        <div class="tool-chip">plan diffing</div>
+        <div class="tool-chip">+ 7 more</div>
+      </div>
+
+      <div class="compat">
+        <span>Claude · GPT · Gemini · Cursor · Copilot</span>
+      </div>
+    </div>
+
+    <div class="divider-v"></div>
+
+    <!-- PROOF -->
+    <div class="card">
+      <div class="card-label">Baseline Results</div>
+
+      <div class="num-block">
+        <div class="num-row">
+          <div class="num-value green">75</div>
+          <div class="num-title">Resource environment</div>
+          <div class="num-sub">Dummy infra · 3-tier AWS simulation</div>
+        </div>
+
+        <div class="num-row">
+          <div class="num-value red">1.49M</div>
+          <div class="num-title">Tokens consumed</div>
+          <div class="num-sub">30 trials · 10 task categories · raw CLI</div>
+        </div>
+
+        <div class="num-row">
+          <div class="num-value red">$1.73</div>
+          <div class="num-title">Per run — toy environment</div>
+          <div class="num-sub">
+            Real prod = 500–5,000 resources.<br/>
+            The cost curve doesn't stay here.
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <footer>
+    <div class="close-line">
+      The abstraction layer infrastructure has been missing. <span>We're building it.</span>
+    </div>
+    <div class="footer-meta">MCP · TERRAFORM · ANY MODEL · ANY AGENT</div>
+  </footer>
+
+</body>
+</html>
