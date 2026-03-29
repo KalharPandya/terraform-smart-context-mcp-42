@@ -269,7 +269,7 @@ Anthropic open-sourced MCP in November 2024 as a standard for connecting AI assi
 
 ### 6.2 LLM Tool Use and Function Calling
 
-Research shows that structured tool access significantly reduces LLM hallucination compared to raw text generation. Gorilla [4] demonstrated that LLMs fine-tuned for API calling surpass GPT-4 at generating correct API calls. The Berkeley Function Calling Leaderboard (BFCL) [5] is the standard benchmark for evaluating tool-calling accuracy across serial, parallel, and multi-turn scenarios, the same patterns our MCP tools target. ToolACE [6] showed that even 8B-parameter models achieve state-of-the-art tool use with well-structured interfaces, validating that **tool design matters more than model size**.
+Research shows that structured tool access significantly reduces LLM hallucination compared to raw text generation. Gorilla [4] demonstrated that LLMs fine-tuned for API calling surpass frontier models at generating correct API calls. The Berkeley Function Calling Leaderboard (BFCL) [5] is the standard benchmark for evaluating tool-calling accuracy across serial, parallel, and multi-turn scenarios, the same patterns our MCP tools target. ToolACE [6] showed that even 8B-parameter models achieve state-of-the-art tool use with well-structured interfaces, validating that **tool design matters more than model size**.
 
 ### 6.3 Infrastructure as Code
 
@@ -393,12 +393,32 @@ All experiments share a common infrastructure:
 
 ### 8.4 Experiment 3: Cross-Model Portability
 
-**Design:** Same prompts through the MCP server, connected to:
-- Claude (Sonnet)
-- GPT-4
-- Gemini Pro
+**Design:** Same 10 prompts through the MCP server, connected to models across proprietary and open-source providers. We select models with native tool-calling / function-calling support:
 
-**Tradeoff evaluated:** Whether the MCP abstraction is model-agnostic or biased toward one provider's tool-calling patterns.
+**Proprietary Models:**
+
+| Model | Provider | Why Included |
+|-------|----------|-------------|
+| Claude Sonnet 4 | Anthropic | Baseline model, native MCP support |
+| Claude Haiku 4.5 | Anthropic | Smaller/faster, tests if tool design compensates for model size |
+| GPT-4.1 | OpenAI | Latest OpenAI flagship with improved function calling |
+| GPT-4.1 mini | OpenAI | Cost-optimized variant, tests efficiency at lower price point |
+| o4-mini | OpenAI | Reasoning model, tests structured thinking with tool use |
+| Gemini 2.5 Pro | Google | Latest Gemini with extended context and tool use |
+| Gemini 2.5 Flash | Google | Fast/cheap variant, tests if MCP tools reduce need for large models |
+
+**Open-Source Models:**
+
+| Model | Provider/Source | Why Included |
+|-------|----------------|-------------|
+| Llama 4 Scout (17B active) | Meta | Latest open-source with native tool calling, MoE architecture |
+| Llama 4 Maverick (17B active) | Meta | Higher-quality Llama 4 variant, tests open-source ceiling |
+| Qwen 3 (32B) | Alibaba | Strong tool-calling benchmark scores, multilingual |
+| Mistral Medium 3 | Mistral AI | European open-weight model with function calling |
+| DeepSeek-V3 | DeepSeek | MoE model with strong coding/reasoning, 671B total params |
+| Command R+ | Cohere | Designed for RAG and tool use, enterprise-focused |
+
+**Tradeoff evaluated:** Whether the MCP abstraction is model-agnostic or biased toward specific providers. If smaller/cheaper models (Haiku, GPT-4.1 mini, Gemini Flash, Qwen 3) achieve comparable accuracy to flagship models when given structured MCP tools, it validates that **tool design matters more than model size** for infrastructure tasks.
 
 ### 8.5 Scoring Framework
 
