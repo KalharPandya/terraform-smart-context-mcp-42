@@ -47,11 +47,12 @@ All meaningful files in this repo. Update this section when files are added or r
 |------|---------|
 | `plans/claude-automations-optimization.md` | Automation implementation plan (hooks, skills, subagents, GitHub MCP). |
 | `plans/experiments-plan.md` | Baseline experiment plan — dummy infra, prompts, runner, scorer. |
+| `plans/tool-set-plan.md` | v1 MCP tool set design — 5 DAG tools + 2 GraphQL tools + 5 CLI tools. Experiment-backed. |
 
 ### Source
 | File | Purpose |
 |------|---------|
-| `src/index.ts` | MCP server — 6 Terraform CLI wrapper tools (init, validate, plan, apply, state_list, output). |
+| `src/index.ts` | MCP server entry point — currently 6 CLI wrappers, v1 will have 12 tools (5 DAG + 2 GraphQL + 5 CLI). See `plans/tool-set-plan.md`. |
 | `test-mcp.mjs` | Smoke test — spawns MCP server, runs validate and plan against test-infra/. |
 | `tsconfig.json` | TypeScript config — ES2022, Node16, strict mode. |
 | `package.json` | Dependencies: `@modelcontextprotocol/sdk`, `zod`. DevDeps: `tsx`, `typescript`. |
