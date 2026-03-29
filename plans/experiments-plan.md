@@ -21,9 +21,12 @@ Project 42 claims raw Terraform state overflows LLM context windows and kills ac
 experiments/baseline/
 ├── README.md
 ├── prompts.json              # 10 prompts + ground truth
-├── runner.ts                 # Anthropic SDK agentic loop
+├── runner.ts                 # Claude Code CLI headless runner
 ├── scorer.ts                 # Automated scoring
+├── RAW_Claude_Code_Experiments.md  # Research findings + run summary
 ├── results/                  # Output (gitignored except .gitkeep)
+│   ├── raw_YYYYMMDD_HHMMSS.json    # Per-run raw metrics
+│   └── summary_YYYYMMDD.md         # Scored summary table
 └── dummy-infra/
     ├── providers.tf
     ├── variables.tf
@@ -37,6 +40,9 @@ experiments/baseline/
         ├── database/         # 10 resources: RDS, ElastiCache, secrets
         ├── loadbalancer/     # 10 resources: ALB, TGs, listeners, rules
         └── monitoring/       # 10 resources: SNS, CloudWatch alarms, dashboard
+
+Note: Each experiment trial also creates a temp dir (OS tmpdir) with only .tf files copied
+in — no README, no prompts.json — then deletes it after all trials for that prompt finish.
 ```
 
 ---
@@ -75,12 +81,37 @@ Each "resource" is a `null_resource` with `triggers` holding simulated attribute
 
 ## Experiment Runner
 
-- Uses `@anthropic-ai/sdk` directly (not Claude Code CLI) for precise token counting
-- **Raw mode tools:** `run_terraform` (any CLI command), `read_file` (.tf files), `list_files`
-- Agentic loop: send prompt -> model calls tools -> execute -> feed results back -> repeat until final answer
-- Captures per-prompt: tokens_in, tokens_out, tool_calls, wall_time_ms, full transcript
-- 3 trials per prompt for statistical validity (mean +/- stddev)
-- `--mode raw|mcp` flag for future MCP comparison (only raw implemented now)
+- Uses **Claude Code CLI headless mode** (`claude -p`) — not the Anthropic SDK directly
+- Claude Code CLI returns `--output-format json` with built-in metrics: tokens, cost, duration, session_id
+- Tool call counting via `--output-format stream-json` (counts `tool_use` events in the stream)
+- **Raw mode:** `--allowedTools "Bash"` + `--bare` so Claude only has a terminal — no MCP, no skills, no CLAUDE.md auto-loading
+- **MCP mode (future):** `--allowedTools "mcp__terraform__*"` to compare against raw CLI arm
+- `--max-turns 10` per run, `--max-budget-usd 2.00` per prompt as cost guard
+- 3 trials per prompt for statistical validity (mean ± stddev)
+- `--mode raw|mcp` flag in runner selects tool set; only `raw` implemented in baseline
+
+### Temporary Directory Per Run
+
+Each experiment run gets an isolated temporary directory:
+- Copy all `.tf` files from `dummy-infra/` (including modules/) — **no README.md, no .gitignore**
+- Run `terraform init` in the temp dir before first use (cached across trials)
+- Invoke `claude -p` with `cwd` set to the temp dir so Claude cannot read any answer hints
+- Delete temp dir after all trials for a prompt complete
+- Purpose: prevent Claude from reading `dummy-infra/README.md` or `prompts.json` ground truth
+
+### Metrics Captured Per Prompt Trial
+
+| Metric | Source |
+|--------|--------|
+| `tokens_in` | `json.usage.input_tokens` |
+| `tokens_out` | `json.usage.output_tokens` |
+| `cost_usd` | `json.cost` |
+| `wall_time_ms` | `json.duration` |
+| `tool_calls` | count of `tool_use` events in stream-json |
+| `answer` | `json.result` |
+| `session_id` | `json.session_id` |
+
+Final output: `results/raw_YYYYMMDD_HHMMSS.json` + `RAW_Claude_Code_Experiments.md` summary.
 
 ---
 
@@ -95,24 +126,24 @@ Each "resource" is a `null_resource` with `triggers` holding simulated attribute
 
 ## Implementation Order
 
-| Step | What | Files |
-|------|------|-------|
-| 1 | Create directory structure + .gitignore | `experiments/baseline/**` |
-| 2 | Build networking module (foundation) | `modules/networking/*.tf` |
-| 3 | Build security module | `modules/security/*.tf` |
-| 4 | Build compute module | `modules/compute/*.tf` |
-| 5 | Build database module | `modules/database/*.tf` |
-| 6 | Build loadbalancer module | `modules/loadbalancer/*.tf` |
-| 7 | Build monitoring module | `modules/monitoring/*.tf` |
-| 8 | Wire root main.tf + outputs.tf + variables | Root `*.tf` files |
-| 9 | `terraform init && apply` — verify 75 resources | Validate state |
-| 10 | Verify `terraform show -json` is 4000+ lines | Validate size |
-| 11 | Create prompts.json with ground truth | `prompts.json` |
-| 12 | Add `@anthropic-ai/sdk` to package.json | `package.json` |
-| 13 | Implement runner.ts | `runner.ts` |
-| 14 | Implement scorer.ts | `scorer.ts` |
-| 15 | Run baseline (10 prompts x 3 trials) | `results/` |
-| 16 | Write README.md with findings | `README.md` |
+| Step | What | Files | Status |
+|------|------|-------|--------|
+| 1 | Create directory structure + .gitignore | `experiments/baseline/**` | Done |
+| 2 | Build networking module | `modules/networking/*.tf` | Done |
+| 3 | Build security module | `modules/security/*.tf` | Done |
+| 4 | Build compute module | `modules/compute/*.tf` | Done |
+| 5 | Build database module | `modules/database/*.tf` | Done |
+| 6 | Build loadbalancer module | `modules/loadbalancer/*.tf` | Done |
+| 7 | Build monitoring module | `modules/monitoring/*.tf` | Done |
+| 8 | Wire root main.tf + outputs.tf + variables | Root `*.tf` files | Done |
+| 9 | `terraform init && apply` — verify 75 resources | Validate state | Done |
+| 10 | Verify `terraform show -json` is 4000+ lines | Validate size | Done (4041 lines) |
+| 11 | Create prompts.json with ground truth | `prompts.json` | Done |
+| 12 | Research runner approach — Claude Code CLI vs SDK | `RAW_Claude_Code_Experiments.md` | Done |
+| 13 | Implement runner.ts using Claude Code CLI headless mode | `runner.ts` | **Next** |
+| 14 | Implement scorer.ts | `scorer.ts` | Pending |
+| 15 | Run baseline (10 prompts x 3 trials) | `results/` | Pending |
+| 16 | Write summary + update RAW_Claude_Code_Experiments.md | `RAW_Claude_Code_Experiments.md` | Pending |
 
 ---
 
