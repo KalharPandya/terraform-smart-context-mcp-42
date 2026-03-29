@@ -23,10 +23,12 @@ experiments/baseline/
 ├── prompts.json              # 10 prompts + ground truth
 ├── runner.ts                 # Claude Code CLI headless runner
 ├── scorer.ts                 # Automated scoring
-├── RAW_Claude_Code_Experiments.md  # Research findings + run summary
 ├── results/                  # Output (gitignored except .gitkeep)
 │   ├── raw_YYYYMMDD_HHMMSS.json    # Per-run raw metrics
 │   └── summary_YYYYMMDD.md         # Scored summary table
+│
+│ [created after runs complete]
+├── RAW_Claude_Code_Experiments.md  # Results summary + findings (not created until first run)
 └── dummy-infra/
     ├── providers.tf
     ├── variables.tf
