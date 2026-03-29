@@ -1,3 +1,11 @@
+<style>
+  @media print {
+    .page-break { page-break-after: always; }
+    h2 { page-break-before: auto; }
+    table, pre, blockquote { page-break-inside: avoid; }
+  }
+</style>
+
 # Project 42: Terraform Smart Context MCP Server -- Progress Report
 
 **Course:** CS 6650 -- Distributed Systems, Northeastern University Vancouver
@@ -73,7 +81,7 @@ AI plays a **dual role** in this project:
 | **Visualization** | 6-chart interactive dashboard | `visualize.ts` generates Chart.js HTML from scored results |
 | **Cost Monitoring** | Per-prompt and aggregate cost tracking | CLI `--max-budget-usd` guard + post-hoc cost analysis |
 
----
+<div class="page-break"></div>
 
 ## 2. Project Plan and Recent Progress
 
@@ -139,7 +147,7 @@ gantt
 - AI-first code review workflow catches decision violations before commit (zero post-merge decision conflicts)
 - Automated decision capture ensures all 12 decisions in `DECISIONS.md` are immediately visible to all team members
 
----
+<div class="page-break"></div>
 
 ## 3. Project Plan (Detailed)
 
@@ -170,7 +178,7 @@ The full project plan is tracked via [GitHub Projects -- Project 42](https://git
 | 7 | `get_schema` | GraphQL | Return GraphQL SDL + example queries |
 | 8-12 | `terraform_*` | CLI | init, validate, plan, apply, output |
 
----
+<div class="page-break"></div>
 
 ## 4. Claude Code-First Development
 
@@ -213,7 +221,7 @@ flowchart TD
 
 The AI is not autonomous. The human makes design decisions; Claude Code documents them immediately, enforces them during review, and broadcasts them to teammates. **Context sharing is the priority, not coding speed.** This workflow treats teammates' visibility of decisions and blockers as higher priority than individual developer velocity.
 
----
+<div class="page-break"></div>
 
 ## 5. Objectives
 
@@ -251,7 +259,7 @@ At baseline, a complex infrastructure query costs **$0.10+** and **79K tokens**.
 
 For an organization running 100 agent queries/day, this translates from ~$5.80/day to ~$1.20/day, a $1,679/year saving on a single project.
 
----
+<div class="page-break"></div>
 
 ## 6. Related Work
 
@@ -308,7 +316,7 @@ HashiCorp's MCP is a documentation tool. Ours is an infrastructure introspection
 [9] N. Liu et al., "Lost in the Middle: How Language Models Use Long Contexts," TACL 2024.
 [10] Chroma Research, "Context Rot: How Increasing Input Tokens Impacts LLM Performance," 2025.
 
----
+<div class="page-break"></div>
 
 ## 7. Hypothesis
 
@@ -354,7 +362,7 @@ The baseline experiment **partially confirmed and partially surprised us**:
 | MCP tools fix Prompt 3 (scored 0.00 in baseline) | `get_dependencies("vpc", direction: "dependents", depth: 1)` | Exact set returned, no ambiguity |
 | MCP tools collapse Prompt 6 cost ($0.125 avg) | `query_graph` with `path(from, to)` | Single call, ~$0.01, deterministic chain |
 
----
+<div class="page-break"></div>
 
 ## 8. Methodology
 
@@ -403,7 +411,7 @@ All experiments share a common infrastructure:
 
 Fuzzy matching includes AZ short-code mapping (`us-east-1a` to `use1-az1`), separator-agnostic number matching, and compact form normalization.
 
----
+<div class="page-break"></div>
 
 ## 9. Preliminary Results
 
@@ -481,7 +489,7 @@ xychart-beta
 
 **Base-case workload:** v1 completes by Apr 5, Experiment 1 MCP arm runs Apr 6-7, Experiment 2 runs Apr 8-9, report finalized Apr 10.
 
----
+<div class="page-break"></div>
 
 ## 10. Impact
 
