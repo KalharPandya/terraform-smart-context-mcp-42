@@ -74,7 +74,33 @@ gh project item-list 1 --owner KalharPandya
 
 ---
 
-**7. Show a summary of today's work.**
+**7. Update CHANGELOG.md.**
+
+```
+git log --oneline --since="session start" --all
+```
+
+From the commits this session, find any with `feat:` or `fix:` prefixes.
+For each one:
+- `feat:` commits → add a line under `### Added` in the `[Unreleased]` section
+- `fix:` commits → add a line under `### Fixed` in the `[Unreleased]` section
+
+Format each line as:
+```
+- <commit summary, rewritten as a plain English description of what shipped>
+```
+
+Do not add entries for `decision:`, `context:`, `chore:`, or housekeeping commits.
+Do not edit any existing entries — only append under the correct section heading.
+
+Commit the change:
+```
+git add CHANGELOG.md && git commit -m "chore: update CHANGELOG.md for session"
+```
+
+---
+
+**8. Show a summary of today's work.**
 
 ```
 git log --oneline -5
@@ -84,6 +110,6 @@ Show me the last 5 commits. This is my summary of what I shipped today.
 
 ---
 
-**8. Confirm clean close.**
+**9. Confirm clean close.**
 
 "Session ended cleanly. Teammates will see your context on their next `git pull`."
