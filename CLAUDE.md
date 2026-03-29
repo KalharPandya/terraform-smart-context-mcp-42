@@ -42,6 +42,11 @@ All meaningful files in this repo. Update this section when files are added or r
 | `AI-COLLABORATION.md` | Full team workflow guide — session flow, rules, commit prefixes. |
 | `CLAUDE.md` | This file. Project instructions loaded every session. |
 
+### Reports
+| File | Purpose |
+|------|---------|
+| `reports/progress-report.md` | Course progress report — problem, team, experiments, methodology, preliminary results, impact. |
+
 ### Plans (in-progress work, not yet committed to code)
 | File | Purpose |
 |------|---------|
@@ -118,14 +123,15 @@ Trust these sources in this order. Higher = more authoritative.
 | Status | Todo / In Progress / Done | What is being worked on right now |
 | Priority | P0 / P1 / P2 | P0 = blocks everything, P1 = this sprint, P2 = backlog |
 | Size | XS / S / M / L / XL | Effort estimate |
-| Iteration | Sprint 1 (Mar 28) / Sprint 2 (Apr 11) / Sprint 3 (Apr 25) | 2-week cycles |
+| Iteration | Sprint 1 (Mar 28) / Sprint 2 (Mar 30 - Apr 10) | Project ends Apr 10 |
 
 **Rules:**
 - Move an issue to **In Progress** the moment you start work on it
 - Move it to **Done** when the work is committed and pushed
 - Set **Priority** when creating or picking up an issue
-- Decision issues (#7–#11) move to Done when `/commit-decision` is run for them
-- Experiment issues (#12–#16) are owned by ShahParin, Sprint 1
+- Decision issues (#7-#11) move to Done when `/commit-decision` is run for them
+- Experiment issues (#12-#16) are owned by ShahParin, Sprint 1
+- Implementation issues (#17-#23) are owned by KalharPandya, Sprint 2
 
 ---
 

@@ -30,8 +30,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - v1 MCP tool set plan (`plans/tool-set-plan.md`): 5 purpose-built DAG tools + 2 GraphQL tools + 5 CLI tools = 12 total. Experiment-backed — each tool targets specific raw CLI inefficiency patterns found in baseline. Projected 6x token reduction.
 - 5 architecture decisions resolving DECISIONS.md Q1-Q5: node model (resources + module containers), edge model (explicit + implicit, deduplicated), parser (terraform show -json for v1), tool list (12 tools), output shape (summary string on every response).
 - GitHub issues #17-#23 for 7 implementation phases of the tool set plan, all assigned to KalharPandya.
+- Progress report (`reports/progress-report.md`): 10-section Markdown report covering problem, team, experiments, project plan (Mermaid Gantt), Claude Code-first development workflow, objectives, related work (10 references), hypothesis (original + revised), methodology, preliminary results (Mermaid charts), and impact. Closes #24.
 
 ### Changed
+- CLAUDE.md: added `reports/` to file map, updated sprint timeline to reflect Apr 10 deadline, added implementation issues note.
 - README.md rewritten: added v1 tool set table (DAG + GraphQL + CLI), baseline experiment results summary, architecture section describing DAG + GraphQL design.
 
 ### Fixed
