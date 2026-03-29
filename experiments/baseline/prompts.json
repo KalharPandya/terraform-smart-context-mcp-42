@@ -1,0 +1,226 @@
+{
+  "version": "1.0",
+  "description": "Baseline experiment prompts for 75-resource dummy Terraform infrastructure. 10 prompts (3 easy, 4 medium, 3 hard) with ground truth answers for automated scoring.",
+  "infra_path": "./dummy-infra",
+  "prompts": [
+    {
+      "id": 1,
+      "prompt": "What is the CIDR block of the VPC?",
+      "difficulty": "easy",
+      "category": "attribute-lookup",
+      "scoring": {
+        "type": "substring-match",
+        "ground_truth": {
+          "substrings": ["10.0.0.0/16"]
+        }
+      }
+    },
+    {
+      "id": 2,
+      "prompt": "List all subnets and their availability zones.",
+      "difficulty": "easy",
+      "category": "enumeration",
+      "scoring": {
+        "type": "set-overlap",
+        "ground_truth": {
+          "expected": [
+            "public_subnet_1 in us-east-1a",
+            "public_subnet_2 in us-east-1b",
+            "public_subnet_3 in us-east-1c",
+            "private_subnet_1 in us-east-1a",
+            "private_subnet_2 in us-east-1b",
+            "private_subnet_3 in us-east-1c",
+            "db_subnet_1 in us-east-1a",
+            "db_subnet_2 in us-east-1b"
+          ],
+          "order_matters": false
+        }
+      }
+    },
+    {
+      "id": 3,
+      "prompt": "What resources directly depend on the VPC?",
+      "difficulty": "medium",
+      "category": "dependency-direct",
+      "scoring": {
+        "type": "set-overlap",
+        "ground_truth": {
+          "expected": [
+            "public_subnet_1",
+            "public_subnet_2",
+            "public_subnet_3",
+            "private_subnet_1",
+            "private_subnet_2",
+            "private_subnet_3",
+            "db_subnet_1",
+            "db_subnet_2",
+            "internet_gateway",
+            "route_table_public",
+            "route_table_private",
+            "route_table_db"
+          ],
+          "order_matters": false
+        }
+      }
+    },
+    {
+      "id": 4,
+      "prompt": "If I destroy the DB subnet group, what resources are affected?",
+      "difficulty": "hard",
+      "category": "impact-analysis",
+      "scoring": {
+        "type": "set-overlap",
+        "ground_truth": {
+          "expected": [
+            "rds_primary",
+            "rds_replica",
+            "secrets_manager_version"
+          ],
+          "order_matters": false
+        }
+      }
+    },
+    {
+      "id": 5,
+      "prompt": "List all security group rules that allow inbound traffic from 0.0.0.0/0.",
+      "difficulty": "medium",
+      "category": "security-filter",
+      "scoring": {
+        "type": "set-overlap",
+        "ground_truth": {
+          "expected": [
+            "sg_alb: port 443 (HTTPS)",
+            "sg_rule_alb: port 80 (HTTP)"
+          ],
+          "order_matters": false
+        }
+      }
+    },
+    {
+      "id": 6,
+      "prompt": "Trace the full dependency chain from the ALB HTTPS listener to the RDS primary database.",
+      "difficulty": "hard",
+      "category": "dependency-chain",
+      "scoring": {
+        "type": "topological-validation",
+        "ground_truth": {
+          "required_nodes": [
+            "listener_https",
+            "alb",
+            "sg_alb",
+            "sg_web",
+            "sg_app",
+            "sg_db",
+            "rds_primary"
+          ],
+          "must_precede": [
+            ["listener_https", "alb"],
+            ["alb", "sg_alb"],
+            ["sg_alb", "sg_web"],
+            ["sg_web", "sg_app"],
+            ["sg_app", "sg_db"],
+            ["sg_db", "rds_primary"]
+          ]
+        }
+      }
+    },
+    {
+      "id": 7,
+      "prompt": "What is the correct deployment order for the web tier resources?",
+      "difficulty": "medium",
+      "category": "deployment-order",
+      "scoring": {
+        "type": "topological-validation",
+        "ground_truth": {
+          "required_nodes": [
+            "key_pair",
+            "instance_profile_web",
+            "launch_template_web",
+            "asg_web",
+            "web_instance_1",
+            "web_instance_2",
+            "scaling_policy_web",
+            "cw_alarm_asg_web"
+          ],
+          "must_precede": [
+            ["key_pair", "launch_template_web"],
+            ["instance_profile_web", "launch_template_web"],
+            ["launch_template_web", "asg_web"],
+            ["asg_web", "web_instance_1"],
+            ["asg_web", "web_instance_2"],
+            ["asg_web", "scaling_policy_web"],
+            ["scaling_policy_web", "cw_alarm_asg_web"]
+          ]
+        }
+      }
+    },
+    {
+      "id": 8,
+      "prompt": "Which module outputs does the compute module consume?",
+      "difficulty": "medium",
+      "category": "cross-module",
+      "scoring": {
+        "type": "set-overlap",
+        "ground_truth": {
+          "expected": [
+            "private_subnet_ids",
+            "public_subnet_ids",
+            "sg_web_id",
+            "sg_app_id",
+            "sg_alb_id",
+            "iam_role_web_arn",
+            "iam_role_app_arn",
+            "iam_role_web_name",
+            "iam_role_app_name"
+          ],
+          "order_matters": false
+        }
+      }
+    },
+    {
+      "id": 9,
+      "prompt": "How many resources are there in total? Break down the count by module.",
+      "difficulty": "easy",
+      "category": "inventory",
+      "scoring": {
+        "type": "checklist",
+        "ground_truth": {
+          "items": [
+            "75 total",
+            "networking: 15",
+            "security: 14",
+            "compute: 16",
+            "database: 10",
+            "loadbalancer: 10",
+            "monitoring: 10"
+          ],
+          "min_for_full": 7,
+          "min_for_partial": 4
+        }
+      }
+    },
+    {
+      "id": 10,
+      "prompt": "What Terraform resources would I need to add to deploy a new microservice behind the existing ALB?",
+      "difficulty": "hard",
+      "category": "planning",
+      "scoring": {
+        "type": "checklist",
+        "ground_truth": {
+          "items": [
+            "security group",
+            "IAM role",
+            "instance profile",
+            "launch template",
+            "auto scaling group",
+            "target group",
+            "listener rule",
+            "scaling policy"
+          ],
+          "min_for_full": 7,
+          "min_for_partial": 4
+        }
+      }
+    }
+  ]
+}
