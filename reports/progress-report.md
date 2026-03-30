@@ -1,11 +1,3 @@
-<style>
-  @media print {
-    .page-break { page-break-after: always; }
-    h2 { page-break-before: auto; }
-    table, pre, blockquote { page-break-inside: avoid; }
-  }
-</style>
-
 # Project 42: Terraform Smart Context MCP Server -- Progress Report
 
 **Course:** CS 6650 -- Distributed Systems, Northeastern University Vancouver
@@ -18,7 +10,7 @@
 
 ### 1.1 The Problem
 
-LLMs are increasingly used as infrastructure operators, but when an LLM needs to understand what is *actually deployed*, it faces three failures: **(1)** State is too large for context windows -- `terraform show -json` on a 75-resource project produces 4,041 lines (~33K tokens); **(2)** Every interaction starts blind with no memory of what is deployed; **(3)** Agents hallucinate resource arguments without structured access to live infrastructure.
+LLMs are increasingly used as infrastructure operators, but when an LLM needs to understand what is *actually deployed*, it faces three failures: **(1)** State is too large -- `terraform show -json` on a 75-resource project produces 4,041 lines (~33K tokens); **(2)** Every interaction starts blind with no memory of what is deployed; **(3)** Agents hallucinate resource arguments without structured access to live infrastructure.
 
 Code editing agents (Cursor, Claude Code) solved this for programming with structured tools like `read_file` and `edit_file`. Terraform has no equivalent. Project 42 builds that equivalent -- an MCP server that gives any AI agent structured, token-efficient access to live Terraform infrastructure.
 
@@ -51,8 +43,6 @@ AI plays a **dual role**: development tool (Claude Code with 7 slash commands, 5
 | **Experiment** | Tokens, cost, time, tool calls, accuracy per trial | `runner.ts` captures metrics from Claude CLI stream |
 | **MCP Server** | Per-tool latency, response size, error rates | Planned: structured JSON logging per invocation |
 | **Visualization** | 6-chart interactive dashboard | `visualize.ts` generates Chart.js HTML |
-
-<div class="page-break"></div>
 
 ## 2. Project Plan and Recent Progress
 
@@ -104,8 +94,6 @@ Phases 1-2 (DAG model + traversal) are prerequisites. Phase 7 wires all 12 tools
 **Cost:** Baseline experiment $1.73 (30 trials, 1.49M tokens). Dev sessions ~$5-10 across Sprint 1.
 **Benefits:** 3-person team shipped full experiment infrastructure, 12-tool architecture, and 5 resolved architecture decisions in one sprint using Claude Code-first development.
 
-<div class="page-break"></div>
-
 ## 3. Claude Code-First Development
 
 We experiment with **Claude Code-first development cycles** where Claude Code is the primary interface for developing, reviewing, and shipping code.
@@ -127,11 +115,11 @@ Every session follows a 5-phase cycle: **start** (load team context) -> **design
 
 ## 5. Related Work
 
-Anthropic open-sourced MCP in November 2024 [1] as a JSON-RPC 2.0 protocol connecting AI assistants to external tools [2], adopted by Block, Apollo, Zed, and Sourcegraph [3]. Gorilla [4] and BFCL [5] demonstrate that structured tool interfaces reduce hallucination, and ToolACE [6] showed **tool design matters more than model size**. Terraform's internal DAG [7] is the same structure we parse and serve. "Lost in the Middle" [9] and "Context Rot" [10] show LLMs degrade well before hitting max context -- the core justification for returning minimal subgraphs. MCP embodies distributed systems fundamentals: **RPC** (JSON-RPC 2.0), **client-server** architecture, **protocol design** (versioned schemas, capability negotiation), and **state management** (in-memory DAG with session handshakes). HashiCorp's MCP server answers "what does this provider support?" (docs). Ours answers "what is deployed?" (live state). They do not overlap.
+Anthropic open-sourced MCP in November 2024 [1] as a JSON-RPC 2.0 protocol connecting AI assistants to external tools [2], adopted by Block, Apollo, Zed, and Sourcegraph [3]. Gorilla [4] and BFCL [5] demonstrate that structured tool interfaces reduce hallucination, and ToolACE [6] showed **tool design matters more than model size**. Terraform's internal DAG [7] is the same structure we parse and serve. "Lost in the Middle" [9] showed LLMs degrade on mid-context information; "Context Rot" [10] found every frontier model degrades well before hitting max context -- the core justification for returning minimal subgraphs. TerraFormer [8] showed 15-20% IaC generation improvement with structured feedback.
+
+MCP embodies distributed systems fundamentals: **RPC** (JSON-RPC 2.0 tool calls), **client-server** architecture, **protocol design** (versioned schemas, capability negotiation), and **state management** (in-memory DAG with session handshakes). HashiCorp's MCP server answers "what does this provider support?" (docs). Ours answers "what is deployed?" (live state). They do not overlap.
 
 **References:** [1] Anthropic, "Introducing MCP," Nov 2024. [2] MCP Spec, 2025. [3] InfoQ, Dec 2024. [4] Patil et al., "Gorilla," arXiv 2023. [5] Patil et al., "BFCL," ICML 2025. [6] Team-ACE, "ToolACE," Sep 2024. [7] HashiCorp, "Terraform Resource Graph." [8] Jana et al., "TerraFormer," Jan 2026. [9] Liu et al., "Lost in the Middle," TACL 2024. [10] Chroma, "Context Rot," 2025.
-
-<div class="page-break"></div>
 
 ## 6. Methodology and Hypothesis
 
@@ -167,9 +155,7 @@ Anthropic open-sourced MCP in November 2024 [1] as a JSON-RPC 2.0 protocol conne
 
 ### 6.4 Scoring
 
-Four types: `substring-match` (exact values), `set-overlap` (enumeration, >=80% -> 1.0), `topological-validation` (nodes + precedence), `checklist` (planning prompts). Fuzzy matching includes AZ short-code mapping and separator-agnostic normalization.
-
-<div class="page-break"></div>
+Four types: `substring-match` (exact values), `set-overlap` (>=80% -> 1.0), `topological-validation` (nodes + precedence), `checklist` (planning). Fuzzy matching includes AZ short-code mapping and separator-agnostic normalization.
 
 ## 7. Preliminary Results
 
@@ -207,7 +193,7 @@ xychart-beta
 
 ### 7.4 What Remains
 
-Experiment 1 MCP arm (Apr 1-7, needs v1), Experiment 2 (Apr 7-9 if time), Experiment 3 (future work). **Worst case:** descope to Experiment 1 only. **Base case:** v1 by Apr 5, MCP experiment Apr 6-7, Experiment 2 Apr 8-9, report finalized Apr 10.
+Experiment 1 MCP arm (Apr 1-7, needs v1). Experiment 2 (Apr 7-9, if time). Experiment 3 (future work). **Worst case:** descope to Experiment 1 only. **Base case:** v1 by Apr 5, MCP experiment Apr 6-7, Experiment 2 Apr 8-9, report finalized Apr 10.
 
 ## 8. Impact
 
