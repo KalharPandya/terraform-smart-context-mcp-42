@@ -35,11 +35,6 @@ Included in the progress report (Section 7: Preliminary Results):
 
 **File:** [reports/Elevator-pitch.mp4](https://github.com/KalharPandya/terraform-smart-context-mcp-42/blob/main/reports/Elevator-pitch.mp4)
 
-| File | Description | GitHub Link |
-|------|------------|-------------|
-| `pitch/slides.html` | Pitch deck (single-page HTML) | [View](https://github.com/KalharPandya/terraform-smart-context-mcp-42/blob/main/pitch/slides.html) |
-| `pitch/script.md` | Presenter script | [View](https://github.com/KalharPandya/terraform-smart-context-mcp-42/blob/main/pitch/script.md) |
-
 ## 5. Progress Report (5 pages)
 
 | Format | GitHub Link |
@@ -74,9 +69,6 @@ Covers: Problem, Team, Experiments, Project Plan, Claude Code-First Development,
     progress-report.md                   <-- 5-page report (markdown)
     progress-report.pdf                  <-- 5-page report (PDF)
     Elevator-pitch.mp4                   <-- 2-min elevator pitch video
-  pitch/
-    slides.html                          <-- pitch deck (single-page HTML)
-    script.md                            <-- presenter script
   src/
     index.ts                             <-- MCP server code
   test-mcp.mjs                           <-- smoke test
