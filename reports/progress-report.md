@@ -10,6 +10,18 @@ LLMs are increasingly used as infrastructure operators, but querying what is *ac
 
 **Stakeholders:** DevOps teams at scale, platform engineers, orgs with 50+ Terraform resources.
 
+```mermaid
+flowchart LR
+    subgraph "Current: Raw CLI"
+        A[LLM Agent] -->|"terraform show -json"| B["Full State\n4,041 lines\n~33K tokens"]
+        B -->|"Floods context"| A
+    end
+    subgraph "Project 42: MCP Server"
+        C[LLM Agent] -->|"list_resources(type=subnet)"| D["MCP Server\n(DAG + GraphQL)"]
+        D -->|"Filtered: 8 subnets\n~200 tokens"| C
+    end
+```
+
 **Team:** Kalhar Pandya (MCP implementation, architecture, TypeScript/MCP SDK), Vinal Dsouza (AI-first workflow, Claude Code automations, coordination), Parin Shah (protocol design, experiments, scorer implementation). All MS CS at NEU Vancouver.
 
 **Experiments:** Three experiments evaluate MCP tools vs raw CLI. Metrics: accuracy, tokens, cost, tool calls, latency. **(1)** Tool-Augmented vs Raw State (baseline complete); **(2)** Abstraction Granularity (designed); **(3)** Cross-Model Portability across 15 models (designed). AI plays a dual role: development tool (Claude Code with 7 commands, 5 skills) and experiment subject.
@@ -42,7 +54,17 @@ gantt
 
 ## 3. Claude Code-First Development
 
-We experiment with **Claude Code-first development cycles** -- 7 slash commands (`/start-session`, `/commit-decision`, `/sync-context`, `/review-design`, `/review-code`, `/review-pr`, `/end-session`) and 5 auto-loading domain skills (`terraform-parsing`, `dag-design`, `mcp-server-patterns`, `context-reduction`, `code-review`). Sessions follow: **start** (load context) -> **design review** -> **development** (commit decisions immediately) -> **code review** (rule-based, every finding cites a rule) -> **end** (sync, push). Humans make decisions; Claude Code documents, enforces, and broadcasts them. **Context sharing over coding speed.**
+We experiment with **Claude Code-first development cycles** -- 7 slash commands and 5 auto-loading domain skills (`terraform-parsing`, `dag-design`, `mcp-server-patterns`, `context-reduction`, `code-review`). Humans make decisions; Claude Code documents, enforces, and broadcasts them. **Context sharing over coding speed.**
+
+```mermaid
+flowchart LR
+    A["/start-session\nLoad team context"] --> B["/review-design\nValidate approach"]
+    B --> C["Development\n/commit-decision\n/sync-context"]
+    C --> D["/review-code\n/review-pr\nRule-based gates"]
+    D --> E["/end-session\nSync + push"]
+    C -->|decision| F["DECISIONS.md\nAppend-only log"]
+    F --> C
+```
 
 ## 4. Objectives
 
@@ -66,7 +88,22 @@ Anthropic open-sourced MCP in Nov 2024 [1] as JSON-RPC 2.0 protocol for AI-tool 
 | Medium | 50-75% | **75%** | 15-30K | **44K** |
 | Hard | 10-30% | **94%** | 30-50K | **79K** |
 
-**Infrastructure:** 75 `null_resource` across 6 modules (networking, security, compute, database, loadbalancer, monitoring), 4,041-line state, zero cloud cost. 10 prompts (3 easy, 4 medium, 3 hard). Pipeline: `runner.ts` -> `scorer.ts` -> `visualize.ts`. Temp dir per trial, `.claude/` deleted between trials.
+**Infrastructure:** 75 `null_resource` across 6 modules, 4,041-line state, zero cloud cost. 10 prompts (3 easy, 4 medium, 3 hard). Temp dir per trial, `.claude/` deleted between trials.
+
+```mermaid
+flowchart LR
+    subgraph "Experiment Pipeline"
+        R["runner.ts\nClaude CLI headless\n3 trials x 10 prompts"] --> S["scorer.ts\n4 scoring types\nfuzzy matching"]
+        S --> V["visualize.ts\nChart.js dashboard\n6 interactive charts"]
+    end
+    subgraph "Dummy Infrastructure"
+        N["networking\n15 res"] --- SEC["security\n14 res"]
+        SEC --- C["compute\n16 res"]
+        C --- DB["database\n10 res"]
+        DB --- LB["loadbalancer\n10 res"]
+        LB --- M["monitoring\n10 res"]
+    end
+```
 
 **Experiment 1** (baseline done, MCP pending): raw CLI vs 12 MCP tools. **Experiment 2:** coarse/medium/fine tool granularity. **Experiment 3:** 15 models -- Proprietary: Claude Sonnet 4.6, Haiku 4.5, GPT-5.4, GPT-5.4 mini, o3, Gemini 2.5 Pro, Gemini 2.5 Flash, Grok 4.1 Fast, MiniMax-M2.7. Open-source: Qwen3.5-397B, DeepSeek-V3.2, Llama 4 Maverick, GLM-4.5-Air, MiMo-V2-Flash, Mistral Medium 3.
 
@@ -90,6 +127,14 @@ xychart-beta
     y-axis "Score / Normalized" 0 --> 1.0
     bar "Accuracy" [0.83, 0.75, 0.94]
     bar "Token Cost (norm)" [0.36, 0.56, 1.0]
+```
+
+```mermaid
+xychart-beta
+    title "Token Usage by Prompt (Avg across 3 trials, in thousands)"
+    x-axis ["P1", "P2", "P3", "P4", "P5", "P6", "P7", "P8", "P9", "P10"]
+    y-axis "Tokens (K)" 0 --> 90
+    bar [30, 33, 48, 76, 48, 76, 45, 36, 21, 84]
 ```
 
 **Key findings:** Hard prompts cost 2.8x more tokens (28K -> 79K) with 6.9x more tool output, but maintain 94% accuracy. 97.9% of tokens are input (context accumulation). Token variance is high -- Prompt 4 scored 1.0 on all trials but ranged 51K-99K (1.9x).
