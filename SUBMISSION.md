@@ -33,7 +33,7 @@ Included in the progress report (Section 7: Preliminary Results):
 
 ## 4. Elevator Pitch Video (2 min)
 
-**File:** [reports/Elevator-pitch.mp4](https://github.com/KalharPandya/terraform-smart-context-mcp-42/blob/main/reports/Elevator-pitch.mp4)
+**Video:** [Google Drive](https://drive.google.com/file/d/1YKlC8QVXJDTKTsbmJKrU_ItkDBSn1Bu9/view)
 
 ## 5. Progress Report (5 pages)
 
@@ -54,7 +54,7 @@ Covers: Problem, Team, Experiments, Project Plan, Claude Code-First Development,
 | **Project Board** | [github.com/users/KalharPandya/projects/1](https://github.com/users/KalharPandya/projects/1) |
 | **Progress Report (MD)** | [reports/progress-report.md](https://github.com/KalharPandya/terraform-smart-context-mcp-42/blob/main/reports/progress-report.md) |
 | **Progress Report (PDF)** | [reports/progress-report.pdf](https://github.com/KalharPandya/terraform-smart-context-mcp-42/blob/main/reports/progress-report.pdf) |
-| **Elevator Pitch Video** | [reports/Elevator-pitch.mp4](https://github.com/KalharPandya/terraform-smart-context-mcp-42/blob/main/reports/Elevator-pitch.mp4) |
+| **Elevator Pitch Video** | [Google Drive](https://drive.google.com/file/d/1YKlC8QVXJDTKTsbmJKrU_ItkDBSn1Bu9/view) |
 | **Baseline Results** | [RAW_Claude_Code_Experiments.md](https://github.com/KalharPandya/terraform-smart-context-mcp-42/blob/main/experiments/baseline/RAW_Claude_Code_Experiments.md) |
 | **Dummy Infrastructure** | [experiments/baseline/dummy-infra/](https://github.com/KalharPandya/terraform-smart-context-mcp-42/tree/main/experiments/baseline/dummy-infra) |
 
