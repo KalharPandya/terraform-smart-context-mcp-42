@@ -16,8 +16,57 @@ git status
 If there is uncommitted work:
 - Ask me: "Do you want to commit this, stash it, or leave it?"
 - Do not proceed until I answer.
-- If I want to commit: help me write a clear commit message and commit.
 - If I want to stash: run `git stash` with a descriptive name.
+- If I want to commit: use the standard commit format below.
+
+---
+
+### Commit Message Format
+
+```
+<type>(<scope>): <short summary>
+
+[optional body — explain WHY, not what]
+
+Closes #<issue>   ← use if this fully resolves the issue
+Refs #<issue>     ← use if this is partial work or just related
+```
+
+**Types:**
+
+| Type | When to use |
+|------|-------------|
+| `feat` | New feature |
+| `fix` | Bug fix |
+| `refactor` | Code change that isn't a fix or feature |
+| `test` | Adding or updating tests |
+| `docs` | Documentation only |
+| `chore` | Build process, tooling, dependencies |
+| `decision` | DECISIONS.md update only |
+| `context` | NOTES.md / CHANGELOG.md housekeeping |
+
+**Rules:**
+- Subject line: max 72 chars, imperative mood ("add" not "added"), no period
+- Scope is optional but recommended when the change is isolated (e.g., `dag`, `parser`, `mcp`, `runner`)
+- Always include `Closes #N` or `Refs #N` — every commit should trace to an issue
+- Body is optional but use it when the *why* is not obvious from the summary
+
+**Examples:**
+```
+feat(dag): add edge traversal for module dependencies
+
+Closes #17
+```
+```
+fix(parser): handle empty resource blocks without crashing
+
+Refs #18
+```
+```
+refactor(mcp): extract subgraph builder into separate function
+
+Closes #20
+```
 
 ---
 
