@@ -27,8 +27,9 @@ Based on what is being reviewed, determine which skills are relevant:
 |----------------|-------------|
 | `.tf` files or HCL parsing logic | `terraform-parsing` |
 | DAG nodes, edges, graph construction | `dag-design` |
-| MCP tool definitions or handlers | `mcp-server-patterns` |
+| MCP tool definitions or handlers | `mcp-server-patterns` + `add-tool` |
 | Subgraph selection, response building | `context-reduction` |
+| New feature or capability proposal | `scope-guard` |
 
 Load all applicable skills. A single file may trigger multiple skills.
 

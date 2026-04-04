@@ -1,3 +1,8 @@
+---
+name: scope-guard
+description: Auto-triggered when any new feature, tool, or capability is proposed — checks against GOAL.md v1 out-of-scope list before any code is written.
+---
+
 # Skill: scope-guard
 
 **User-invocable:** false — Claude invokes this automatically
@@ -50,6 +55,19 @@ Which do you want to do?
 **Do not proceed with implementation until the user picks A or B.**
 
 If the user picks B, remind them: "Run `/commit-decision` first. Once committed to DECISIONS.md, we can build it."
+
+---
+
+## scope-guard vs /review-design — When to Use Which
+
+| | `scope-guard` | `/review-design` |
+|---|---|---|
+| **Trigger** | Automatic — fires on any proposal | Manual — user runs it explicitly |
+| **Purpose** | Binary in/out-of-scope check | Full design validation (decisions, skills, correctness) |
+| **When** | Before a single line of code | Before starting a non-trivial implementation |
+| **Output** | SCOPE ALERT with A/B choice | Structured review with BLOCKING/WARNING/SUGGESTION |
+
+**Rule:** `scope-guard` runs first, always. If it passes, the user may then choose to run `/review-design` for a deeper pre-build validation. They are not alternatives — they are sequential layers.
 
 ---
 

@@ -69,13 +69,15 @@ what `git log` already shows — if git shows it committed, my note may be stale
 Run both commands:
 
 ```bash
-GH="/c/Program Files/GitHub CLI/gh.exe"
-
-# Issues assigned to me only
-"$GH" issue list --repo KalharPandya/terraform-smart-context-mcp-42 \
+# Works on Mac (Homebrew) and Windows (winget) — gh must be in PATH
+# Mac:    brew install gh
+# Windows: winget install GitHub.cli
+gh issue list --repo KalharPandya/terraform-smart-context-mcp-42 \
   --state open --assignee @me --limit 50 \
   --json number,title,labels,state
 ```
+
+If `gh` is not found, install it using the command for your OS above, then run `gh auth login`.
 
 From this output, tell me:
 - Which of my assigned issues are open right now

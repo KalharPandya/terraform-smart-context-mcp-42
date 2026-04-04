@@ -47,7 +47,7 @@ git add NOTES.md
 **5. Commit with a consistent message format.**
 
 ```
-git commit -m "context: sync [name] [YYYY-MM-DD]"
+git commit -m "context(notes): sync [name] [YYYY-MM-DD]"
 ```
 
 ---

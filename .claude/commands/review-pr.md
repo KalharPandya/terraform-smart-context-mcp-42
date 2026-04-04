@@ -46,7 +46,16 @@ that makes this PR's changes dangerous to merge right now.
 
 ---
 
-**4. Review each changed file.**
+**4. Run tool-schema-reviewer if `src/index.ts` is in the changeset.**
+
+If `src/index.ts` appears in the changed file list, spawn the `tool-schema-reviewer` agent before reviewing any other file.
+
+- If verdict is **FAIL**: stop the PR review immediately. List the BLOCKING findings and ask the author to fix them before continuing.
+- If verdict is **PASS WITH WARNINGS** or **PASS**: include the result in the final report and proceed.
+
+---
+
+**5. Review each changed file.**
 
 For each file in the changeset, run the full `/review-code` logic:
 

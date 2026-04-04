@@ -30,17 +30,38 @@ Review all tool names before committing.
 Every MCP tool must have all four of these:
 
 ```typescript
-{
-  name: "verb_noun",                        // verb_noun string
-  description: "One sentence, under 20 words.",  // short — every word costs context
-  inputSchema: {                            // typed JSON schema
-    type: "object",
-    properties: { ... },
-    required: [...]
+server.registerTool(
+  "verb_noun",                                      // verb_noun string
+  {
+    title: "Human Readable Title",
+    description: "One sentence, under 20 words.",   // short — every word costs context
+    inputSchema: z.object({                         // zod schema — never z.any() or empty
+      requiredField: z.string().describe("..."),
+      optionalField: z.boolean().optional().describe("..."),
+    }),
   },
-  handler: async (input) => { ... }        // returns structured response or error
-}
+  async ({ requiredField, optionalField }) => {     // destructured from zod shape
+    try {
+      // implementation
+      return { content: [{ type: "text" as const, text: "..." }] };
+    } catch (err) {
+      return {
+        content: [{ type: "text" as const, text: `Error: ${err instanceof Error ? err.message : String(err)}` }],
+        isError: true,
+      };
+    }
+  }
+);
 ```
+
+**Zod type mapping:**
+| Input type | Zod |
+|-----------|-----|
+| string | `z.string()` |
+| number | `z.number()` |
+| boolean | `z.boolean()` |
+| string[] | `z.array(z.string())` |
+| key-value object | `z.record(z.string())` |
 
 Do not ship a tool missing any of these four fields.
 

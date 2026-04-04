@@ -17,7 +17,17 @@ If there is uncommitted work:
 - Ask me: "Do you want to commit this, stash it, or leave it?"
 - Do not proceed until I answer.
 - If I want to stash: run `git stash` with a descriptive name.
-- If I want to commit: use the standard commit format below.
+- If I want to commit: first run the tool-schema-reviewer check below if `src/index.ts` is in the staged files, then use the standard commit format.
+
+#### Tool schema check (only if `src/index.ts` is staged)
+
+```bash
+git diff --staged --name-only | grep -q "src/index.ts"
+```
+
+If it matches: spawn the `tool-schema-reviewer` agent against `src/index.ts`.
+- If verdict is **FAIL**: do not commit. Fix the BLOCKING issues first.
+- If verdict is **PASS WITH WARNINGS** or **PASS**: proceed to commit.
 
 ---
 

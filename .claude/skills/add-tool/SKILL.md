@@ -1,3 +1,8 @@
+---
+name: add-tool
+description: Use when scaffolding a new MCP tool in src/index.ts — enforces verb_noun naming, zod schema, try/catch, and tsc verification.
+---
+
 # Skill: add-tool
 
 **User-invocable:** `/add-tool`

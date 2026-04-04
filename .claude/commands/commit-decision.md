@@ -60,10 +60,12 @@ git add DECISIONS.md NOTES.md
 **7. Commit with a consistent message format.**
 
 ```
-git commit -m "decision: <summary> [name]"
+git commit -m "decision: <summary in one sentence>
+
+Closes #<issue number if this answers a tracked decision issue>"
 ```
 
-Keep the summary short — under 72 characters total including the prefix.
+Keep the subject line under 72 characters. Include `Closes #N` only if a GitHub issue tracks this decision (e.g. #7–#11).
 
 ---
 
