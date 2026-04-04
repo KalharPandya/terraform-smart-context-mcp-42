@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- PreToolUse hook (`protect-readonly-files.mjs`) that blocks direct edits to DECISIONS.md — enforces append-only contract at the tooling level. Closes #2.
+- Three Claude automation files: `/add-tool` skill for scaffolding new MCP tools with zod schema and tsc verification, `scope-guard` skill that auto-triggers on out-of-scope proposals before any code is written, and `tool-schema-reviewer` agent that validates all `registerTool()` blocks against mcp-server-patterns conventions. Closes #3, #4, #5.
 - Dummy Terraform infrastructure: 75 null_resources across 6 modules (networking, security, compute, database, loadbalancer, monitoring) simulating a 3-tier AWS deployment. State produces 4041 pretty-printed JSON lines (~33K tokens). Zero cloud charges. Closes #12.
 - 4 design decisions committed to DECISIONS.md: null_resource trigger refs, 75-resource module layout, 4000+ line state target, experiment comparison metrics.
 - `/end-session` command now includes a step to update CHANGELOG.md with `feat:` and `fix:` commits before closing — closes the gap where the file claimed to be auto-updated but had no instruction to do so.
