@@ -40,5 +40,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - README.md rewritten: added v1 tool set table (DAG + GraphQL + CLI), baseline experiment results summary, architecture section describing DAG + GraphQL design.
 
 ### Fixed
+- `/start-session` command now runs `git fetch --all` before `git pull` — prevents stale remote tracking branches from causing missed commits at session start.
 
 ### Removed
