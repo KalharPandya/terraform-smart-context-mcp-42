@@ -14,6 +14,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **v1 MCP server implementation** — 17 tools (12 read, 3 write, 2 destroy) with 3-tier gate system, GraphQL DAG engine, and prebuilt query generator.
+- Gate system (`src/gate.ts`): `TERRAFORM_MCP_GATE` env var controls tool visibility — `read` (default, 12 tools), `write` (15 tools), `destroy` (17 tools). Tools above the gate are never registered.
+- DAG engine (`src/dag/`): parses `terraform show -json` into a graphology `DirectedGraph` with BFS traversal, topological sort, shortest path, and Map indexes (byModule, byType, byShortName). Lazy init, cached, auto-detects out-of-band `.tfstate` changes via mtime/size fingerprint.
+- GraphQL layer (`src/graphql/`): 8 query roots — `resource`, `resources`, `module`, `modules`, `path`, `impact`, `deploymentOrder`, `summary`. Depth guard (5), node limit (100), bare `resources{}` rejection, 5s timeout.
+- Prebuilt query generator (`src/graphql/prebuilt.ts`): generates ready-to-run GraphQL queries using real resource IDs from the live graph. Scoped by infrastructure, module, or resource.
+- `query_graph` MCP tool: executes GraphQL with compact schema summary baked into the tool description (always visible to the LLM).
+- `get_schema` MCP tool: returns full SDL + prebuilt queries, with optional `module` or `resource` parameter for scoped context.
+- 9 new CLI tools: `terraform_show`, `terraform_state_show`, `terraform_graph`, `terraform_providers`, `terraform_fmt`, `terraform_destroy`, `terraform_import`, `terraform_state_rm`, `terraform_state_mv`.
+- Baked-in LLM guidance (`src/instructions.ts`): workflow recommendations, tool categories, output format, constraints.
+- DAG auto-invalidation: `terraform_apply` and `terraform_destroy` invalidate the graph cache on success.
+- GraphQL integration test (`test-graphql.mjs`): 6 test scenarios against 75-resource dummy-infra.
 - PreToolUse hook (`protect-readonly-files.mjs`) that blocks direct edits to DECISIONS.md — enforces append-only contract at the tooling level. Closes #2.
 - Three Claude automation files: `/add-tool` skill for scaffolding new MCP tools with zod schema and tsc verification, `scope-guard` skill that auto-triggers on out-of-scope proposals before any code is written, and `tool-schema-reviewer` agent that validates all `registerTool()` blocks against mcp-server-patterns conventions. Closes #3, #4, #5.
 - Dummy Terraform infrastructure: 75 null_resources across 6 modules (networking, security, compute, database, loadbalancer, monitoring) simulating a 3-tier AWS deployment. State produces 4041 pretty-printed JSON lines (~33K tokens). Zero cloud charges. Closes #12.
@@ -36,8 +47,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Elevator pitch deck and script (`pitch/`): single-page HTML slide (`slides.html`) with 3-column layout covering problem, solution, and baseline proof — plus solo presenter script (`script.md`) with delivery notes for 2-minute video recording.
 
 ### Changed
-- CLAUDE.md: added `reports/` to file map, updated sprint timeline to reflect Apr 10 deadline, added implementation issues note.
-- README.md rewritten: added v1 tool set table (DAG + GraphQL + CLI), baseline experiment results summary, architecture section describing DAG + GraphQL design.
+- `src/index.ts` refactored from monolithic 6-tool file into modular bootstrap: reads gate, iterates tool registrations, wires DAG invalidation.
+- README.md rewritten: full MCP configuration guide (Claude Desktop, Claude Code, Cursor), all 17 tools documented with tiers, architecture diagram, GraphQL schema reference, testing instructions.
+- CLAUDE.md: source file map updated with all new files across `src/gate.ts`, `src/terraform/`, `src/dag/`, `src/graphql/`, `src/tools/`.
+- `package.json` dependencies: added `graphql`, `graphology`, `graphology-dag`, `graphology-traversal`, `graphology-shortest-path`.
 
 ### Fixed
 - `/start-session` command now runs `git fetch --all` before `git pull` — prevents stale remote tracking branches from causing missed commits at session start.

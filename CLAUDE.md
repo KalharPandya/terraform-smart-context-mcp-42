@@ -55,13 +55,48 @@ All meaningful files in this repo. Update this section when files are added or r
 | `plans/experiements-plan-v2.md` | Enhanced re-run plan — fixes CLAUDE_BIN for Windows, adds all_bash_commands + tf_lines_read metrics to runner/scorer. |
 | `plans/tool-set-plan.md` | v1 MCP tool set design — 5 DAG tools + 2 GraphQL tools + 5 CLI tools. Experiment-backed. |
 
-### Source
+### Source — Server Bootstrap
 | File | Purpose |
 |------|---------|
-| `src/index.ts` | MCP server entry point — currently 6 CLI wrappers, v1 will have 12 tools (5 DAG + 2 GraphQL + 5 CLI). See `plans/tool-set-plan.md`. |
-| `test-mcp.mjs` | Smoke test — spawns MCP server, runs validate and plan against test-infra/. |
+| `src/index.ts` | MCP server entry point — reads gate, registers CLI + GraphQL tools, connects stdio transport. 17 tools total. |
+| `src/gate.ts` | 3-tier gate system (read/write/destroy). Maps tool names to tiers, enforces via non-registration. |
+| `src/instructions.ts` | Baked-in LLM guidance string passed to McpServer via `{ instructions }`. |
+
+### Source — Terraform CLI (`src/terraform/`)
+| File | Purpose |
+|------|---------|
+| `src/terraform/cli.ts` | `runTerraform()` subprocess helper + `toolResult()` MCP formatter. |
+| `src/terraform/tools.ts` | All 15 CLI tool registrations. `getAllToolRegistrations()` returns a keyed Record. |
+
+### Source — DAG Engine (`src/dag/`)
+| File | Purpose |
+|------|---------|
+| `src/dag/types.ts` | DagNode, DagEdge, DagIndexes, TerraformShowJson, GraphState, StateFingerprint interfaces. |
+| `src/dag/builder.ts` | `buildFromJson()` — parses `terraform show -json` output into nodes + edges. |
+| `src/dag/indexes.ts` | `buildIndexes()` — single-pass Map indexes: byModule, byType, byShortName, modules. |
+| `src/dag/graph.ts` | `DagGraph` singleton — graphology-backed graph with lazy init, BFS, topo sort, shortest path, state hash detection. |
+
+### Source — GraphQL (`src/graphql/`)
+| File | Purpose |
+|------|---------|
+| `src/graphql/schema.ts` | GraphQL SDL (8 query roots) + `buildSchema()`. |
+| `src/graphql/resolvers.ts` | Root resolvers backed by DagGraph accessors. |
+| `src/graphql/validation.ts` | Depth guard (5), bare `resources{}` rejection, schema validation, timeout. |
+| `src/graphql/prebuilt.ts` | Generates ready-to-run queries using real resource IDs. Scoped by infra/module/resource. |
+
+### Source — MCP Tools (`src/tools/`)
+| File | Purpose |
+|------|---------|
+| `src/tools/query_graph.ts` | MCP tool: execute GraphQL with compact schema summary in description. |
+| `src/tools/get_schema.ts` | MCP tool: return SDL + scoped prebuilt queries (optional module/resource param). |
+
+### Config & Tests
+| File | Purpose |
+|------|---------|
+| `package.json` | Dependencies: `@modelcontextprotocol/sdk`, `zod`, `graphql`, `graphology`, `graphology-*`. |
 | `tsconfig.json` | TypeScript config — ES2022, Node16, strict mode. |
-| `package.json` | Dependencies: `@modelcontextprotocol/sdk`, `zod`. DevDeps: `tsx`, `typescript`. |
+| `test-mcp.mjs` | CLI smoke test — spawns MCP server, runs validate and plan against test-infra/. |
+| `test-graphql.mjs` | GraphQL integration test — 6 scenarios against dummy-infra (75 resources). |
 
 ### Test Infrastructure
 | File | Purpose |
