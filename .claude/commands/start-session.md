@@ -7,9 +7,10 @@ Priority order matters. Do not skip steps.
 
 ## Steps
 
-**1. Pull latest from remote.**
+**1. Fetch and pull latest from remote.**
 
 ```
+git fetch --all
 git pull
 ```
 
