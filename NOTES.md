@@ -42,3 +42,5 @@ Clear your entry once the work is committed.
 ```
 [EXAMPLE 2026-01-01] Refactoring the GraphNode interface — do not build against it until this is committed.
 ```
+
+[Kalhar 2026-04-11] About to modify experiments/baseline/runner.ts and scorer.ts — adding all_bash_commands and tf_lines_read metrics, fixing CLAUDE_BIN for Windows. Plan in plans/experiements-plan-v2.md. Do not build against runner output shape until changes are committed.

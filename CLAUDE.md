@@ -52,6 +52,7 @@ All meaningful files in this repo. Update this section when files are added or r
 |------|---------|
 | `plans/claude-automations-optimization.md` | Automation implementation plan (hooks, skills, subagents, GitHub MCP). |
 | `plans/experiments-plan.md` | Baseline experiment plan — dummy infra, prompts, runner, scorer. |
+| `plans/experiements-plan-v2.md` | Enhanced re-run plan — fixes CLAUDE_BIN for Windows, adds all_bash_commands + tf_lines_read metrics to runner/scorer. |
 | `plans/tool-set-plan.md` | v1 MCP tool set design — 5 DAG tools + 2 GraphQL tools + 5 CLI tools. Experiment-backed. |
 
 ### Source
