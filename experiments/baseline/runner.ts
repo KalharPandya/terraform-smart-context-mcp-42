@@ -31,12 +31,13 @@ import {
 import { resolve, join, relative } from "path";
 import { tmpdir } from "os";
 import { randomUUID } from "crypto";
+import { fileURLToPath } from "url";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-type Mode = "raw" | "mcp";
+export type Mode = "raw" | "mcp";
 
-interface PromptEntry {
+export interface PromptEntry {
   id: number;
   prompt: string;
   difficulty: string;
@@ -47,14 +48,14 @@ interface PromptEntry {
   };
 }
 
-interface PromptsFile {
+export interface PromptsFile {
   version: string;
   description: string;
   infra_path: string;
   prompts: PromptEntry[];
 }
 
-interface ToolCallRecord {
+export interface ToolCallRecord {
   name: string;
   input: Record<string, unknown>;
   output_preview: string;
@@ -64,7 +65,7 @@ interface ToolCallRecord {
   is_error: boolean;
 }
 
-interface TrialResult {
+export interface TrialResult {
   trial: number;
   answer: string;
   tokens_in: number;
@@ -81,7 +82,7 @@ interface TrialResult {
   total_tool_output_chars: number;
 }
 
-interface PromptResult {
+export interface PromptResult {
   id: number;
   prompt: string;
   difficulty: string;
@@ -90,7 +91,7 @@ interface PromptResult {
   trials: TrialResult[];
 }
 
-interface RunResult {
+export interface RunResult {
   metadata: {
     mode: Mode;
     model: string;
@@ -105,22 +106,22 @@ interface RunResult {
 
 // ─── Config ──────────────────────────────────────────────────────────────────
 
-const MODEL = "sonnet";
-const MAX_BUDGET_USD = 2.0;
+export const MODEL = "sonnet";
+export const MAX_BUDGET_USD = 2.0;
 
-const SCRIPT_DIR = resolve(
+export const SCRIPT_DIR = resolve(
   decodeURIComponent(
     new URL(".", import.meta.url).pathname.replace(/^\/([A-Z]:)/, "$1")
   )
 );
-const REPO_ROOT = resolve(SCRIPT_DIR, "../..");
-const PROMPTS_PATH = join(SCRIPT_DIR, "prompts.json");
-const RESULTS_DIR = join(SCRIPT_DIR, "results");
-const MCP_SERVER_BIN = join(REPO_ROOT, "dist", "index.js");
+export const REPO_ROOT = resolve(SCRIPT_DIR, "../..");
+export const PROMPTS_PATH = join(SCRIPT_DIR, "prompts.json");
+export const RESULTS_DIR = join(SCRIPT_DIR, "results");
+export const MCP_SERVER_BIN = join(REPO_ROOT, "dist", "index.js");
 
 // ─── Claude Binary Detection ─────────────────────────────────────────────────
 
-function findClaudeBin(): string {
+export function findClaudeBin(): string {
   // On Windows, NVM and other package managers create .cmd shims that Node's
   // spawn can't execute directly. Return just "claude" and rely on shell: true.
   if (process.platform === "win32") {
@@ -146,7 +147,7 @@ function findClaudeBin(): string {
 
 // ─── System Prompts ──────────────────────────────────────────────────────────
 
-const RAW_SYSTEM_PROMPT = `You are an infrastructure assistant. There is a Terraform project in the current directory that is already initialized and applied (state exists with 75+ resources across 6 modules).
+export const RAW_SYSTEM_PROMPT = `You are an infrastructure assistant. There is a Terraform project in the current directory that is already initialized and applied (state exists with 75+ resources across 6 modules).
 
 You have access to Bash to run:
 - terraform commands (state list, show -json, state show <address>, graph, output -json, etc.)
@@ -158,7 +159,7 @@ Rules:
 - Do not guess — verify with commands
 - Synthesize your answer clearly — do not dump raw command output`;
 
-function buildMcpSystemPrompt(infraPath: string, useUnified: boolean): string {
+export function buildMcpSystemPrompt(infraPath: string, useUnified: boolean): string {
   // Normalize to forward slashes so Claude doesn't misread on Windows
   const dir = infraPath.replace(/\\/g, "/");
 
@@ -204,7 +205,7 @@ Rules:
 // ─── MCP Tool List ───────────────────────────────────────────────────────────
 
 // These are the tool names as registered by the MCP server named "terraform".
-const MCP_ALLOWED_TOOLS = [
+export const MCP_ALLOWED_TOOLS = [
   "mcp__terraform__get_schema",
   "mcp__terraform__query_graph",
   "mcp__terraform__terraform_state_list",
@@ -220,11 +221,11 @@ const MCP_ALLOWED_TOOLS = [
 ];
 
 // Unified mode: single tool replaces all 12
-const MCP_UNIFIED_ALLOWED_TOOLS = ["mcp__terraform__terraform"];
+export const MCP_UNIFIED_ALLOWED_TOOLS = ["mcp__terraform__terraform"];
 
 // ─── MCP Config File ─────────────────────────────────────────────────────────
 
-function writeMcpConfig(useUnified: boolean): string {
+export function writeMcpConfig(useUnified: boolean): string {
   const serverEntry: Record<string, unknown> = {
     command: "node",
     args: [MCP_SERVER_BIN.replace(/\\/g, "/")],
@@ -244,7 +245,7 @@ function writeMcpConfig(useUnified: boolean): string {
 
 // ─── Temp Directory Management ───────────────────────────────────────────────
 
-function createTempInfraDir(infraDir: string): string {
+export function createTempInfraDir(infraDir: string): string {
   const tempDir = join(tmpdir(), `exp-${randomUUID()}`);
   mkdirSync(tempDir, { recursive: true });
 
@@ -287,7 +288,7 @@ function copyTfFiles(srcDir: string, destDir: string, rootDir: string): void {
   }
 }
 
-function cleanupClaude(dir: string): void {
+export function cleanupClaude(dir: string): void {
   const claudeDir = join(dir, ".claude");
   if (existsSync(claudeDir)) {
     rmSync(claudeDir, { recursive: true, force: true });
@@ -357,7 +358,7 @@ function extractToolOutput(result: StreamEvent["tool_use_result"]): string {
   return [stdout, stderr].filter(Boolean).join("\n");
 }
 
-function parseStreamOutput(rawOutput: string): {
+export function parseStreamOutput(rawOutput: string): {
   toolCalls: ToolCallRecord[];
   result: string;
   tokens_in: number;
@@ -461,7 +462,7 @@ function parseStreamOutput(rawOutput: string): {
 
 // ─── Live Event Printer ───────────────────────────────────────────────────────
 
-const C = {
+export const C = {
   reset: "\x1b[0m",
   blue: "\x1b[34m",
   green: "\x1b[32m",
@@ -543,7 +544,7 @@ function extractMcpTools(toolCalls: ToolCallRecord[]): string[] {
 
 // ─── Trial Execution ─────────────────────────────────────────────────────────
 
-function runTrial(
+export function runTrial(
   prompt: string,
   cwd: string,
   mode: Mode,
@@ -980,7 +981,9 @@ async function main() {
   console.log();
 }
 
-main().catch((err) => {
-  console.error("Runner failed:", err);
-  process.exit(1);
-});
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  main().catch((err) => {
+    console.error("Runner failed:", err);
+    process.exit(1);
+  });
+}

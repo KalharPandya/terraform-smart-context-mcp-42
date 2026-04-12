@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Raw vs MCP — Baseline Experiment Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f0f2f5; color: #222; padding: 24px; }
+    h1 { text-align: center; margin-bottom: 4px; font-size: 24px; color: #111; }
+    .meta { text-align: center; color: #666; margin-bottom: 28px; font-size: 13px; }
+    .legend { display: flex; justify-content: center; gap: 24px; margin-bottom: 20px; font-size: 13px; }
+    .legend-item { display: flex; align-items: center; gap: 6px; }
+    .legend-dot { width: 14px; height: 14px; border-radius: 3px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 1500px; margin: 0 auto; }
+    .chart-card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    .chart-card.full { grid-column: 1 / -1; }
+    .chart-card h2 { font-size: 14px; font-weight: 600; margin-bottom: 14px; color: #333; letter-spacing: 0.02em; }
+    canvas { max-height: 380px; }
+    .table-wrap { max-width: 1500px; margin: 24px auto; background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); overflow-x: auto; }
+    .table-wrap h2 { margin-bottom: 14px; font-size: 16px; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; white-space: nowrap; }
+    th, td { padding: 7px 10px; border: 1px solid #e8e8e8; text-align: center; }
+    th { background: #f5f7fa; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
+    td.prompt-cell { text-align: left; max-width: 280px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 11px; }
+    .score-1 { color: #1b7c3a; font-weight: 700; }
+    .score-05 { color: #c07000; font-weight: 700; }
+    .score-0 { color: #b71c1c; font-weight: 700; }
+    .badge { display: inline-block; padding: 2px 7px; border-radius: 10px; font-size: 10px; font-weight: 600; }
+    .badge-easy { background: #e0f7f4; color: #00796b; }
+    .badge-medium { background: #fff8e1; color: #f57f17; }
+    .badge-hard { background: #fce4ec; color: #c62828; }
+  </style>
+</head>
+<body>
+  <h1>Raw CLI vs MCP — Baseline Experiment Dashboard</h1>
+  <p class="meta">
+    Model: sonnet &nbsp;|&nbsp; CLI: 2.1.101 (Claude Code) &nbsp;|&nbsp;
+    30 prompts × 2 trials × 2 modes &nbsp;|&nbsp;
+    2026-04-12
+  </p>
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:rgba(54, 162, 235, 0.8)"></div> Raw CLI</div>
+    <div class="legend-item"><div class="legend-dot" style="background:rgba(255, 159, 64, 0.8)"></div> MCP</div>
+    <div class="legend-item"><div class="legend-dot" style="background:rgba(75, 192, 192, 0.8)"></div> Easy</div>
+    <div class="legend-item"><div class="legend-dot" style="background:rgba(255, 206, 86, 0.8)"></div> Medium</div>
+    <div class="legend-item"><div class="legend-dot" style="background:rgba(255, 99, 132, 0.8)"></div> Hard</div>
+  </div>
+
+  <div class="grid">
+
+    <!-- Chart 1: Score by Difficulty -->
+    <div class="chart-card">
+      <h2>1 — Accuracy by Difficulty (Raw vs MCP)</h2>
+      <canvas id="c1"></canvas>
+    </div>
+
+    <!-- Chart 2: Per-Prompt Head-to-Head Score -->
+    <div class="chart-card">
+      <h2>2 — Per-Prompt Score (Raw vs MCP)</h2>
+      <canvas id="c2"></canvas>
+    </div>
+
+    <!-- Chart 3: Token Usage by Prompt -->
+    <div class="chart-card">
+      <h2>3 — Avg Tokens per Prompt (Raw vs MCP)</h2>
+      <canvas id="c3"></canvas>
+    </div>
+
+    <!-- Chart 4: Token Reduction % -->
+    <div class="chart-card">
+      <h2>4 — Token Δ% by Prompt (negative = MCP saves)</h2>
+      <canvas id="c4"></canvas>
+    </div>
+
+    <!-- Chart 5: Cost by Difficulty -->
+    <div class="chart-card">
+      <h2>5 — Avg Cost per Query by Difficulty</h2>
+      <canvas id="c5"></canvas>
+    </div>
+
+    <!-- Chart 6: Score vs Tokens Scatter -->
+    <div class="chart-card">
+      <h2>6 — Score vs Tokens (per prompt, both modes)</h2>
+      <canvas id="c6"></canvas>
+    </div>
+
+    <!-- Chart 7: Tool Output Chars by Difficulty -->
+    <div class="chart-card full">
+      <h2>7 — Avg Tool Output Chars by Difficulty (how much context each mode injects)</h2>
+      <canvas id="c7"></canvas>
+    </div>
+
+  </div>
+
+  <!-- Summary Table -->
+  <div class="table-wrap">
+    <h2>Per-Prompt Results (R=Raw trial, M=MCP trial)</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>#</th><th style="text-align:left">Prompt</th><th>Diff</th>
+          <th>R1</th><th>R2</th><th>M1</th><th>M2</th>
+          <th>Raw Mean</th><th>MCP Mean</th><th>Δ Score</th>
+          <th>Raw Tokens</th><th>MCP Tokens</th><th>Token Δ%</th>
+        </tr>
+      </thead>
+      <tbody>
+      <tr>
+        <td>1</td>
+        <td class="prompt-cell" title="What is the CIDR block of the VPC?">What is the CIDR block of the VPC?</td>
+        <td><span class="badge badge-easy">easy</span></td>
+        <td class="score-1">1.0</td><td class="score-1">1.0</td>
+        <td><strong>1.00</strong></td>
+        <td class="score-1">1.0</td><td class="score-1">1.0</td>
+        <td><strong>1.00</strong></td>
+        <td class="">+0.00</td>
+        <td>29,813</td>
+        <td>27,731</td>
+        <td class="score-1">-7%</td>
+      </tr>
+      <tr>
+        <td>2</td>
+        <td class="prompt-cell" title="What is the public IP of the bastion host?">What is the public IP of the bastion host?</td>
+        <td><span class="badge badge-easy">easy</span></td>
+        <td class="score-1">1.0</td><td class="score-1">1.0</td>
+        <td><strong>1.00</strong></td>
+        <td class="score-1">1.0</td><td class="score-1">1.0</td>
+        <td><strong>1.00</strong></td>
+        <td class="">+0.00</td>
+        <td>40,345</td>
+        <td>39,434</td>
+        <td class="score-1">-2%</td>
+      </tr>
+      <tr>
+        <td>3</td>
+        <td class="prompt-cell" title="What database engine and port does the RDS primary instance use?">What database engine and port does the RDS primary inst…</td>
+        <td><span class="badge badge-easy">easy</span></td>
+        <td class="score-1">1.0</td><td class="score-1">1.0</td>
+        <td><strong>1.00</strong></td>
+        <td class="score-1">1.0</td><td class="score-1">1.0</td>
+        <td><strong>1.00</strong></td>
+        <td class="">+0.00</td>
+        <td>41,977</td>
+        <td>64,555</td>
+        <td class="score-0">54%</td>
+      </tr>
+      <tr>
+        <td>4</td>
+        <td class="prompt-cell" title="List all six modules in the infrastructure.">List all six modules in the infrastructure.</td>
+        <td><span class="badge badge-easy">easy</span></td>
+        <td class="score-1">1.0</td><td class="score-1">1.0</td>
+        <td><strong>1.00</strong></td>
+        <td class="score-1">1.0</td><td class="score-1">1.0</td>
+        <td><strong>1.00</strong></td>
+        <td class="">+0.00</td>
+        <td>24,345</td>
+        <td>16,418</td>
+        <td class="score-1">-33%</td>
+      </tr>
+      <tr>
+        <td>5</td>
+        <td class="prompt-cell" title="List all subnets and their availability zones.">List all subnets and their availability zones.</td>
+        <td><span class="badge badge-easy">easy</span></td>
+        <td class="score-0">0.0</td><td class="score-1">1.0</td>
+        <td><strong>0.50</strong></td>
+        <td class="score-0">0.0</td><td class="score-1">1.0</td>
+        <td><strong>0.50</strong></td>
+        <td class="">+0.00</td>
+        <td>33,536</td>
+        <td>46,674</td>
+        <td class="score-0">39%</td>
+      </tr>
+      <tr>
+        <td>6</td>
+        <td class="prompt-cell" title="How many resources are there in total? Break down the count by module.">How many resources are there in total? Break down the c…</td>
+        <td><span class="badge badge-easy">easy</span></td>
+        <td class="score-1">1.0</td><td class="score-1">1.0</td>
+        <td><strong>1.00</strong></td>
+        <td class="score-1">1.0</td><td class="score-1">1.0</td>
+        <td><strong>1.00</strong></td>
+        <td class="">+0.00</td>
+        <td>20,481</td>
+        <td>27,213</td>
+        <td class="score-0">33%</td>
+      </tr>
+      <tr>
+        <td>7</td>
+        <td class="prompt-cell" title="What are the names of all four security groups?">What are the names of all four security groups?</td>
+        <td><span class="badge badge-easy">easy</span></td>
+        <td class="score-1">1.0</td><td class="score-1">1.0</td>
+        <td><strong>1.00</strong></td>
+        <td class="score-1">1.0</td><td class="score-1">1.0</td>
+        <td><strong>1.00</strong></td>
+        <td class="">+0.00</td>
+        <td>39,665</td>
+        <td>46,797</td>
+        <td class="score-0">18%</td>
+      </tr>
+      <tr>
+        <td>8</td>
+        <td class="prompt-cell" title="What is the Redis cache engine version and node type?">What is the Redis cache engine version and node type?</td>
+        <td><span class="badge badge-easy">easy</span></td>
+        <td class="score-1">1.0</td><td class="score-1">1.0</td>
+        <td><strong>1.00</strong></td>
+        <td class="score-1">1.0</td><td class="score-1">1.0</td>
+        <td><strong>1.00</strong></td>
+        <td class="">+0.00</td>
+        <td>40,151</td>
+        <td>62,466</td>
+        <td class="score-0">56%</td>
+      </tr>
+      <tr>
+        <td>9</td>
+        <td class="prompt-cell" title="What resources directly depend on the VPC?">What resources directly depend on the VPC?</td>
+        <td><span class="badge badge-medium">medium</span></td>
+        <td class="score-0">0.0</td><td class="score-0">0.0</td>
+        <td><strong>0.00</strong></td>
+        <td class="score-0">0.0</td><td class="score-0">0.0</td>
+        <td><strong>0.00</strong></td>
+        <td class="">+0.00</td>
+        <td>37,408</td>
+        <td>31,775</td>
+        <td class="score-1">-15%</td>
+      </tr>
+      <tr>
+        <td>10</td>
+        <td class="prompt-cell" title="What resources directly depend on the ALB?">What resources directly depend on the ALB?</td>
+        <td><span class="badge badge-medium">medium</span></td>
+        <td class="score-1">1.0</td><td class="score-1">1.0</td>
+        <td><strong>1.00</strong></td>
+        <td class="score-1">1.0</td><td class="score-1">1.0</td>
+        <td><strong>1.00</strong></td>
+        <td class="">+0.00</td>
+        <td>57,454</td>
+        <td>50,777</td>
+        <td class="score-1">-12%</td>
+      </tr>
+      <tr>
+        <td>11</td>
+        <td class="prompt-cell" title="Which resources in the compute module reference the key_pair?">Which resources in the compute module reference the key…</td>
+        <td><span class="badge badge-medium">medium</span></td>
+        <td class="score-1">1.0</td><td class="score-1">1.0</td>
+        <td><strong>1.00</strong></td>
+        <td class="score-1">1.0</td><td class="score-1">1.0</td>
+        <td><strong>1.00</strong></td>
+        <td class="">+0.00</td>
+        <td>51,214</td>
+        <td>28,109</td>
+        <td class="score-1">-45%</td>
+      </tr>
+      <tr>
+        <td>12</td>
+        <td class="prompt-cell" title="Which resources reference the SNS topic?">Which resources reference the SNS topic?</td>
+        <td><span class="badge badge-medium">medium</span></td>
+        <td class="score-1">1.0</td><td class="score-1">1.0</td>
+        <td><strong>1.00</strong></td>
+        <td class="score-1">1.0</td><td class="score-1">1.0</td>
+        <td><strong>1.00</strong></td>
+        <td class="">+0.00</td>
+        <td>87,016</td>
+        <td>63,722</td>
+        <td class="score-1">-27%</td>
+      </tr>
+      <tr>
+        <td>13</td>
+        <td class="prompt-cell" title="List all security group rules that allow inbound traffic from 0.0.0.0/0.">List all security group rules that allow inbound traffi…</td>
+        <td><span class="badge badge-medium">medium</span></td>
+        <td class="score-1">1.0</td><td class="score-1">1.0</td>
+        <td><strong>1.00</strong></td>
+        <td class="score-05">0.5</td><td class="score-1">1.0</td>
+        <td><strong>0.75</strong></td>
+        <td class="score-0">-0.25</td>
+        <td>61,809</td>
+        <td>43,885</td>
+        <td class="score-1">-29%</td>
+      </tr>
+      <tr>
+        <td>14</td>
+        <td class="prompt-cell" title="List all resources in the database module that have no dependencies on other database resources.">List all resources in the database module that have no …</td>
+        <td><span class="badge badge-medium">medium</span></td>
+        <td class="score-1">1.0</td><td class="score-1">1.0</td>
+        <td><strong>1.00</strong></td>
+        <td class="score-1">1.0</td><td class="score-1">1.0</td>
+        <td><strong>1.00</strong></td>
+        <td class="">+0.00</td>
+        <td>34,809</td>
+        <td>30,375</td>
+        <td class="score-1">-13%</td>
+      </tr>
+      <tr>
+        <td>15</td>
+        <td class="prompt-cell" title="What modules does the monitoring module consume outputs from?">What modules does the monitoring module consume outputs…</td>
+        <td><span class="badge badge-medium">medium</span></td>
+        <td class="score-1">1.0</td><td class="score-1">1.0</td>
+        <td><strong>1.00</strong></td>
+        <td class="score-1">1.0</td><td class="score-1">1.0</td>
+        <td><strong>1.00</strong></td>
+        <td class="">+0.00</td>
+        <td>42,917</td>
+        <td>32,211</td>
+        <td class="score-1">-25%</td>
+      </tr>
+      <tr>
+        <td>16</td>
+        <td class="prompt-cell" title="What ports are exposed by each security group for inbound traffic?">What ports are exposed by each security group for inbou…</td>
+        <td><span class="badge badge-medium">medium</span></td>
+        <td class="score-1">1.0</td><td class="score-1">1.0</td>
+        <td><strong>1.00</strong></td>
+        <td class="score-1">1.0</td><td class="score-1">1.0</td>
+        <td><strong>1.00</strong></td>
+        <td class="">+0.00</td>
+        <td>61,761</td>
+        <td>50,266</td>
+        <td class="score-1">-19%</td>
+      </tr>
+      <tr>
+        <td>17</td>
+        <td class="prompt-cell" title="List all resources that have encryption enabled (storage, at-rest, or in-transit).">List all resources that have encryption enabled (storag…</td>
+        <td><span class="badge badge-medium">medium</span></td>
+        <td class="score-1">1.0</td><td class="score-1">1.0</td>
+        <td><strong>1.00</strong></td>
+        <td class="score-1">1.0</td><td class="score-1">1.0</td>
+        <td><strong>1.00</strong></td>
+        <td class="">+0.00</td>
+        <td>126,282</td>
+        <td>86,180</td>
+        <td class="score-1">-32%</td>
+      </tr>
+      <tr>
+        <td>18</td>
+        <td class="prompt-cell" title="What is the correct deployment order for the load balancer module?">What is the correct deployment order for the load balan…</td>
+        <td><span class="badge badge-medium">medium</span></td>
+        <td class="score-0">0.0</td><td class="score-1">1.0</td>
+        <td><strong>0.50</strong></td>
+        <td class="score-05">0.5</td><td class="score-05">0.5</td>
+        <td><strong>0.50</strong></td>
+        <td class="">+0.00</td>
+        <td>58,567</td>
+        <td>39,258</td>
+        <td class="score-1">-33%</td>
+      </tr>
+      <tr>
+        <td>19</td>
+        <td class="prompt-cell" title="Trace the full dependency chain from the HTTPS listener to the RDS primary database.">Trace the full dependency chain from the HTTPS listener…</td>
+        <td><span class="badge badge-hard">hard</span></td>
+        <td class="score-1">1.0</td><td class="score-1">1.0</td>
+        <td><strong>1.00</strong></td>
+        <td class="score-05">0.5</td><td class="score-1">1.0</td>
+        <td><strong>0.75</strong></td>
+        <td class="score-0">-0.25</td>
+        <td>163,026</td>
+        <td>92,650</td>
+        <td class="score-1">-43%</td>
+      </tr>
+      <tr>
+        <td>20</td>
+        <td class="prompt-cell" title="If I destroy the RDS primary instance, what is the full blast radius? List every affected resource.">If I destroy the RDS primary instance, what is the full…</td>
+        <td><span class="badge badge-hard">hard</span></td>
+        <td class="score-1">1.0</td><td class="score-1">1.0</td>
+        <td><strong>1.00</strong></td>
+        <td class="score-1">1.0</td><td class="score-1">1.0</td>
+        <td><strong>1.00</strong></td>
+        <td class="">+0.00</td>
+        <td>163,152</td>
+        <td>45,791</td>
+        <td class="score-1">-72%</td>
+      </tr>
+      <tr>
+        <td>21</td>
+        <td class="prompt-cell" title="If I destroy sg_web, what resources across all modules are impacted?">If I destroy sg_web, what resources across all modules …</td>
+        <td><span class="badge badge-hard">hard</span></td>
+        <td class="score-1">1.0</td><td class="score-1">1.0</td>
+        <td><strong>1.00</strong></td>
+        <td class="score-1">1.0</td><td class="score-1">1.0</td>
+        <td><strong>1.00</strong></td>
+        <td class="">+0.00</td>
+        <td>72,550</td>
+        <td>41,495</td>
+        <td class="score-1">-43%</td>
+      </tr>
+      <tr>
+        <td>22</td>
+        <td class="prompt-cell" title="What is the correct deployment order for the web tier, starting from the VPC and ending at the CloudWatch alarm?">What is the correct deployment order for the web tier, …</td>
+        <td><span class="badge badge-hard">hard</span></td>
+        <td class="score-1">1.0</td><td class="score-1">1.0</td>
+        <td><strong>1.00</strong></td>
+        <td class="score-1">1.0</td><td class="score-1">1.0</td>
+        <td><strong>1.00</strong></td>
+        <td class="">+0.00</td>
+        <td>133,639</td>
+        <td>83,170</td>
+        <td class="score-1">-38%</td>
+      </tr>
+      <tr>
+        <td>23</td>
+        <td class="prompt-cell" title="Which module outputs does the compute module consume? List each output and the module it comes from.">Which module outputs does the compute module consume? L…</td>
+        <td><span class="badge badge-hard">hard</span></td>
+        <td class="score-1">1.0</td><td class="score-1">1.0</td>
+        <td><strong>1.00</strong></td>
+        <td class="score-0">0.0</td><td class="score-0">0.0</td>
+        <td><strong>0.00</strong></td>
+        <td class="score-0">-1.00</td>
+        <td>32,542</td>
+        <td>38,964</td>
+        <td class="score-0">20%</td>
+      </tr>
+      <tr>
+        <td>24</td>
+        <td class="prompt-cell" title="Trace the dependency path from the CloudWatch dashboard to the VPC. What is the minimum set of resources on that path?">Trace the dependency path from the CloudWatch dashboard…</td>
+        <td><span class="badge badge-hard">hard</span></td>
+        <td class="score-0">0.0</td><td class="score-0">0.0</td>
+        <td><strong>0.00</strong></td>
+        <td class="score-0">0.0</td><td class="score-0">0.0</td>
+        <td><strong>0.00</strong></td>
+        <td class="">+0.00</td>
+        <td>43,006</td>
+        <td>65,483</td>
+        <td class="score-0">52%</td>
+      </tr>
+      <tr>
+        <td>25</td>
+        <td class="prompt-cell" title="If the NAT gateway fails, which resources and tiers lose connectivity? Trace the impact.">If the NAT gateway fails, which resources and tiers los…</td>
+        <td><span class="badge badge-hard">hard</span></td>
+        <td class="score-0">0.0</td><td class="score-0">0.0</td>
+        <td><strong>0.00</strong></td>
+        <td class="score-0">0.0</td><td class="score-0">0.0</td>
+        <td><strong>0.00</strong></td>
+        <td class="">+0.00</td>
+        <td>151,321</td>
+        <td>70,131</td>
+        <td class="score-1">-54%</td>
+      </tr>
+      <tr>
+        <td>26</td>
+        <td class="prompt-cell" title="What Terraform resources would I need to add to deploy a new microservice behind the existing ALB?">What Terraform resources would I need to add to deploy …</td>
+        <td><span class="badge badge-hard">hard</span></td>
+        <td class="score-1">1.0</td><td class="score-1">1.0</td>
+        <td><strong>1.00</strong></td>
+        <td class="score-1">1.0</td><td class="score-1">1.0</td>
+        <td><strong>1.00</strong></td>
+        <td class="">+0.00</td>
+        <td>91,971</td>
+        <td>53,686</td>
+        <td class="score-1">-42%</td>
+      </tr>
+      <tr>
+        <td>27</td>
+        <td class="prompt-cell" title="What is the full dependency chain from the WAF to the VPC? List every resource on the path.">What is the full dependency chain from the WAF to the V…</td>
+        <td><span class="badge badge-hard">hard</span></td>
+        <td class="score-1">1.0</td><td class="score-05">0.5</td>
+        <td><strong>0.75</strong></td>
+        <td class="score-1">1.0</td><td class="score-1">1.0</td>
+        <td><strong>1.00</strong></td>
+        <td class="score-1">+0.25</td>
+        <td>84,248</td>
+        <td>66,553</td>
+        <td class="score-1">-21%</td>
+      </tr>
+      <tr>
+        <td>28</td>
+        <td class="prompt-cell" title="Which resources are leaf nodes (nothing else depends on them) in the security module?">Which resources are leaf nodes (nothing else depends on…</td>
+        <td><span class="badge badge-hard">hard</span></td>
+        <td class="score-1">1.0</td><td class="score-1">1.0</td>
+        <td><strong>1.00</strong></td>
+        <td class="score-1">1.0</td><td class="score-1">1.0</td>
+        <td><strong>1.00</strong></td>
+        <td class="">+0.00</td>
+        <td>33,254</td>
+        <td>31,529</td>
+        <td class="score-1">-5%</td>
+      </tr>
+      <tr>
+        <td>29</td>
+        <td class="prompt-cell" title="Compare the web tier and app tier deployment stacks. What resources does each tier have and how do they mirror each other?">Compare the web tier and app tier deployment stacks. Wh…</td>
+        <td><span class="badge badge-hard">hard</span></td>
+        <td class="score-0">0.0</td><td class="score-0">0.0</td>
+        <td><strong>0.00</strong></td>
+        <td class="score-0">0.0</td><td class="score-0">0.0</td>
+        <td><strong>0.00</strong></td>
+        <td class="">+0.00</td>
+        <td>145,490</td>
+        <td>58,472</td>
+        <td class="score-1">-60%</td>
+      </tr>
+      <tr>
+        <td>30</td>
+        <td class="prompt-cell" title="If I need to rotate the RDS credentials, trace every resource that stores or references the database connection information.">If I need to rotate the RDS credentials, trace every re…</td>
+        <td><span class="badge badge-hard">hard</span></td>
+        <td class="score-1">1.0</td><td class="score-1">1.0</td>
+        <td><strong>1.00</strong></td>
+        <td class="score-1">1.0</td><td class="score-1">1.0</td>
+        <td><strong>1.00</strong></td>
+        <td class="">+0.00</td>
+        <td>284,007</td>
+        <td>73,499</td>
+        <td class="score-1">-74%</td>
+      </tr></tbody>
+    </table>
+  </div>
+
+  <script>
+  const diffColors = ["rgba(75, 192, 192, 0.8)","rgba(75, 192, 192, 0.8)","rgba(75, 192, 192, 0.8)","rgba(75, 192, 192, 0.8)","rgba(75, 192, 192, 0.8)","rgba(75, 192, 192, 0.8)","rgba(75, 192, 192, 0.8)","rgba(75, 192, 192, 0.8)","rgba(255, 206, 86, 0.8)","rgba(255, 206, 86, 0.8)","rgba(255, 206, 86, 0.8)","rgba(255, 206, 86, 0.8)","rgba(255, 206, 86, 0.8)","rgba(255, 206, 86, 0.8)","rgba(255, 206, 86, 0.8)","rgba(255, 206, 86, 0.8)","rgba(255, 206, 86, 0.8)","rgba(255, 206, 86, 0.8)","rgba(255, 99, 132, 0.8)","rgba(255, 99, 132, 0.8)","rgba(255, 99, 132, 0.8)","rgba(255, 99, 132, 0.8)","rgba(255, 99, 132, 0.8)","rgba(255, 99, 132, 0.8)","rgba(255, 99, 132, 0.8)","rgba(255, 99, 132, 0.8)","rgba(255, 99, 132, 0.8)","rgba(255, 99, 132, 0.8)","rgba(255, 99, 132, 0.8)","rgba(255, 99, 132, 0.8)"];
+  const diffBorders = ["rgba(75, 192, 192, 1)","rgba(75, 192, 192, 1)","rgba(75, 192, 192, 1)","rgba(75, 192, 192, 1)","rgba(75, 192, 192, 1)","rgba(75, 192, 192, 1)","rgba(75, 192, 192, 1)","rgba(75, 192, 192, 1)","rgba(255, 206, 86, 1)","rgba(255, 206, 86, 1)","rgba(255, 206, 86, 1)","rgba(255, 206, 86, 1)","rgba(255, 206, 86, 1)","rgba(255, 206, 86, 1)","rgba(255, 206, 86, 1)","rgba(255, 206, 86, 1)","rgba(255, 206, 86, 1)","rgba(255, 206, 86, 1)","rgba(255, 99, 132, 1)","rgba(255, 99, 132, 1)","rgba(255, 99, 132, 1)","rgba(255, 99, 132, 1)","rgba(255, 99, 132, 1)","rgba(255, 99, 132, 1)","rgba(255, 99, 132, 1)","rgba(255, 99, 132, 1)","rgba(255, 99, 132, 1)","rgba(255, 99, 132, 1)","rgba(255, 99, 132, 1)","rgba(255, 99, 132, 1)"];
+
+  // Chart 1 — Score by Difficulty
+  new Chart(document.getElementById('c1'), {
+    type: 'bar',
+    data: {
+      labels: ["easy","medium","hard"],
+      datasets: [
+        { label: 'Raw', data: [0.938,0.85,0.729], backgroundColor: 'rgba(54, 162, 235, 0.8)', borderColor: 'rgba(54, 162, 235, 1)', borderWidth: 2 },
+        { label: 'MCP',  data: [0.938,0.825,0.646],  backgroundColor: 'rgba(255, 159, 64, 0.8)',  borderColor: 'rgba(255, 159, 64, 1)',  borderWidth: 2 }
+      ]
+    },
+    options: { scales: { y: { beginAtZero: true, max: 1.05, title: { display: true, text: 'Mean Score' } } }, plugins: { legend: { position: 'top' } } }
+  });
+
+  // Chart 2 — Per-Prompt Head-to-Head
+  new Chart(document.getElementById('c2'), {
+    type: 'bar',
+    data: {
+      labels: ["P1","P2","P3","P4","P5","P6","P7","P8","P9","P10","P11","P12","P13","P14","P15","P16","P17","P18","P19","P20","P21","P22","P23","P24","P25","P26","P27","P28","P29","P30"],
+      datasets: [
+        { label: 'Raw', data: [1,1,1,1,0.5,1,1,1,0,1,1,1,1,1,1,1,1,0.5,1,1,1,1,1,0,0,1,0.75,1,0,1], backgroundColor: 'rgba(54, 162, 235, 0.8)', borderColor: 'rgba(54, 162, 235, 1)', borderWidth: 1 },
+        { label: 'MCP',  data: [1,1,1,1,0.5,1,1,1,0,1,1,1,0.75,1,1,1,1,0.5,0.75,1,1,1,0,0,0,1,1,1,0,1],  backgroundColor: 'rgba(255, 159, 64, 0.8)',  borderColor: 'rgba(255, 159, 64, 1)',  borderWidth: 1 }
+      ]
+    },
+    options: { scales: { y: { beginAtZero: true, max: 1.05, title: { display: true, text: 'Mean Score' } } }, plugins: { legend: { position: 'top' } } }
+  });
+
+  // Chart 3 — Token Usage by Prompt
+  new Chart(document.getElementById('c3'), {
+    type: 'bar',
+    data: {
+      labels: ["P1","P2","P3","P4","P5","P6","P7","P8","P9","P10","P11","P12","P13","P14","P15","P16","P17","P18","P19","P20","P21","P22","P23","P24","P25","P26","P27","P28","P29","P30"],
+      datasets: [
+        { label: 'Raw Tokens', data: [29813,40345,41977,24345,33536,20481,39665,40151,37408,57454,51214,87016,61809,34809,42917,61761,126282,58567,163026,163152,72550,133639,32542,43006,151321,91971,84248,33254,145490,284007], backgroundColor: 'rgba(54, 162, 235, 0.8)', borderColor: 'rgba(54, 162, 235, 1)', borderWidth: 1 },
+        { label: 'MCP Tokens', data: [27731,39434,64555,16418,46674,27213,46797,62466,31775,50777,28109,63722,43885,30375,32211,50266,86180,39258,92650,45791,41495,83170,38964,65483,70131,53686,66553,31529,58472,73499], backgroundColor: 'rgba(255, 159, 64, 0.8)', borderColor: 'rgba(255, 159, 64, 1)', borderWidth: 1 }
+      ]
+    },
+    options: { scales: { y: { title: { display: true, text: 'Avg Tokens' } } }, plugins: { legend: { position: 'top' } } }
+  });
+
+  // Chart 4 — Token Delta %
+  new Chart(document.getElementById('c4'), {
+    type: 'bar',
+    data: {
+      labels: ["P1","P2","P3","P4","P5","P6","P7","P8","P9","P10","P11","P12","P13","P14","P15","P16","P17","P18","P19","P20","P21","P22","P23","P24","P25","P26","P27","P28","P29","P30"],
+      datasets: [{
+        label: 'Token Δ% (MCP vs Raw)',
+        data: [-7,-2.3,53.8,-32.6,39.2,32.9,18,55.6,-15.1,-11.6,-45.1,-26.8,-29,-12.7,-24.9,-18.6,-31.8,-33,-43.2,-71.9,-42.8,-37.8,19.7,52.3,-53.7,-41.6,-21,-5.2,-59.8,-74.1],
+        backgroundColor: ["rgba(75, 192, 192, 0.8)","rgba(75, 192, 192, 0.8)","rgba(255, 99, 132, 0.8)","rgba(75, 192, 192, 0.8)","rgba(255, 99, 132, 0.8)","rgba(255, 99, 132, 0.8)","rgba(255, 99, 132, 0.8)","rgba(255, 99, 132, 0.8)","rgba(75, 192, 192, 0.8)","rgba(75, 192, 192, 0.8)","rgba(75, 192, 192, 0.8)","rgba(75, 192, 192, 0.8)","rgba(75, 192, 192, 0.8)","rgba(75, 192, 192, 0.8)","rgba(75, 192, 192, 0.8)","rgba(75, 192, 192, 0.8)","rgba(75, 192, 192, 0.8)","rgba(75, 192, 192, 0.8)","rgba(75, 192, 192, 0.8)","rgba(75, 192, 192, 0.8)","rgba(75, 192, 192, 0.8)","rgba(75, 192, 192, 0.8)","rgba(255, 99, 132, 0.8)","rgba(255, 99, 132, 0.8)","rgba(75, 192, 192, 0.8)","rgba(75, 192, 192, 0.8)","rgba(75, 192, 192, 0.8)","rgba(75, 192, 192, 0.8)","rgba(75, 192, 192, 0.8)","rgba(75, 192, 192, 0.8)"],
+        borderWidth: 1
+      }]
+    },
+    options: {
+      scales: { y: { title: { display: true, text: 'Token Δ%' } } },
+      plugins: { legend: { display: false } }
+    }
+  });
+
+  // Chart 5 — Cost by Difficulty
+  new Chart(document.getElementById('c5'), {
+    type: 'bar',
+    data: {
+      labels: ["easy","medium","hard"],
+      datasets: [
+        { label: 'Raw Cost', data: [0.03093,0.06522,0.1586], backgroundColor: 'rgba(54, 162, 235, 0.8)', borderColor: 'rgba(54, 162, 235, 1)', borderWidth: 2 },
+        { label: 'MCP Cost', data: [0.05339,0.08642,0.10908], backgroundColor: 'rgba(255, 159, 64, 0.8)', borderColor: 'rgba(255, 159, 64, 1)', borderWidth: 2 }
+      ]
+    },
+    options: { scales: { y: { title: { display: true, text: 'Avg Cost USD' } } }, plugins: { legend: { position: 'top' } } }
+  });
+
+  // Chart 6 — Score vs Tokens Scatter
+  new Chart(document.getElementById('c6'), {
+    type: 'scatter',
+    data: {
+      datasets: [
+        {
+          label: 'Raw',
+          data: [{"x":29813,"y":1},{"x":40345,"y":1},{"x":41977,"y":1},{"x":24345,"y":1},{"x":33536,"y":0.5},{"x":20481,"y":1},{"x":39665,"y":1},{"x":40151,"y":1},{"x":37408,"y":0},{"x":57454,"y":1},{"x":51214,"y":1},{"x":87016,"y":1},{"x":61809,"y":1},{"x":34809,"y":1},{"x":42917,"y":1},{"x":61761,"y":1},{"x":126282,"y":1},{"x":58567,"y":0.5},{"x":163026,"y":1},{"x":163152,"y":1},{"x":72550,"y":1},{"x":133639,"y":1},{"x":32542,"y":1},{"x":43006,"y":0},{"x":151321,"y":0},{"x":91971,"y":1},{"x":84248,"y":0.75},{"x":33254,"y":1},{"x":145490,"y":0},{"x":284007,"y":1}],
+          backgroundColor: diffColors,
+          borderColor: diffBorders,
+          borderWidth: 1,
+          pointRadius: 7,
+          pointStyle: 'circle',
+        },
+        {
+          label: 'MCP',
+          data: [{"x":27731,"y":1},{"x":39434,"y":1},{"x":64555,"y":1},{"x":16418,"y":1},{"x":46674,"y":0.5},{"x":27213,"y":1},{"x":46797,"y":1},{"x":62466,"y":1},{"x":31775,"y":0},{"x":50777,"y":1},{"x":28109,"y":1},{"x":63722,"y":1},{"x":43885,"y":0.75},{"x":30375,"y":1},{"x":32211,"y":1},{"x":50266,"y":1},{"x":86180,"y":1},{"x":39258,"y":0.5},{"x":92650,"y":0.75},{"x":45791,"y":1},{"x":41495,"y":1},{"x":83170,"y":1},{"x":38964,"y":0},{"x":65483,"y":0},{"x":70131,"y":0},{"x":53686,"y":1},{"x":66553,"y":1},{"x":31529,"y":1},{"x":58472,"y":0},{"x":73499,"y":1}],
+          backgroundColor: 'rgba(255, 159, 64, 0.8)',
+          borderColor: 'rgba(255, 159, 64, 1)',
+          borderWidth: 1,
+          pointRadius: 7,
+          pointStyle: 'triangle',
+        }
+      ]
+    },
+    options: {
+      scales: {
+        x: { title: { display: true, text: 'Avg Tokens' } },
+        y: { beginAtZero: true, max: 1.1, title: { display: true, text: 'Mean Score' } }
+      },
+      plugins: { legend: { position: 'top' } }
+    }
+  });
+
+  // Chart 7 — Tool Output Chars by Difficulty
+  new Chart(document.getElementById('c7'), {
+    type: 'bar',
+    data: {
+      labels: ["easy","medium","hard"],
+      datasets: [
+        { label: 'Raw Bash Output', data: [3697,11973,47674], backgroundColor: 'rgba(54, 162, 235, 0.8)', borderColor: 'rgba(54, 162, 235, 1)', borderWidth: 2 },
+        { label: 'MCP Tool Output', data: [9778,28046,21568], backgroundColor: 'rgba(255, 159, 64, 0.8)', borderColor: 'rgba(255, 159, 64, 1)', borderWidth: 2 }
+      ]
+    },
+    options: {
+      scales: { y: { title: { display: true, text: 'Avg Tool Output (chars)' } } },
+      plugins: { legend: { position: 'top' }, tooltip: {
+        callbacks: { label: (ctx) => ctx.dataset.label + ': ' + ctx.raw.toLocaleString() + ' chars' }
+      }}
+    }
+  });
+  </script>
+</body>
+</html>

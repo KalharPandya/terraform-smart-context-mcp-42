@@ -14,6 +14,10 @@ experiments/baseline/dummy-infra/.terraform.lock.hcl
 # Env
 .env
 
+# Experiment debug/partial logs
+experiments/baseline/results/debug-gemini-*.txt
+experiments/baseline/results/*-partial.json
+
 # Local Claude Code personal config only — commands/ and skills/ are team-shared
 .claude/settings.json
 .claude/settings.local.json

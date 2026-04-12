@@ -15,6 +15,7 @@
 
 import { readFileSync, writeFileSync } from "fs";
 import { resolve, join } from "path";
+import { fileURLToPath } from "url";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -49,6 +50,33 @@ interface ScoredTrial {
   files_accessed: string[];
   terraform_commands: string[];
   total_tool_output_chars: number;
+}
+
+export interface CombinedPromptResult {
+  id: number;
+  prompt: string;
+  difficulty: string;
+  category: string;
+  scoring: { type: string; ground_truth: GroundTruth };
+  raw_trials: Record<string, unknown>[];
+  mcp_trials: Record<string, unknown>[];
+}
+
+export interface CombinedRunResult {
+  metadata: {
+    modes: string[];
+    model: string;
+    timestamp: string;
+    infra_path: string;
+    trials_per_prompt: number;
+    total_prompts: number;
+    claude_cli_version: string;
+    raw_start: string;
+    raw_end: string;
+    mcp_start: string;
+    mcp_end: string;
+  };
+  results: CombinedPromptResult[];
 }
 
 // ─── Normalization ───────────────────────────────────────────────────────────
@@ -312,7 +340,7 @@ function scoreChecklist(
 
 // ─── Score Router ────────────────────────────────────────────────────────────
 
-function scoreAnswer(
+export function scoreAnswer(
   answer: string,
   scoringType: string,
   groundTruth: GroundTruth
@@ -331,6 +359,69 @@ function scoreAnswer(
   }
 }
 
+// ─── Scoring Helpers ─────────────────────────────────────────────────────────
+
+const SCORER_SCRIPT_DIR = resolve(
+  decodeURIComponent(
+    new URL(".", import.meta.url).pathname.replace(/^\/([A-Z]:)/, "$1")
+  )
+);
+const SCORER_RESULTS_DIR = join(SCORER_SCRIPT_DIR, "results");
+
+function scoreSingle(resultsData: any, resultsDir: string): { scoredPath: string; summaryPath: string } {
+  for (const result of resultsData.results) {
+    const scoringType = result.scoring.type;
+    const groundTruth = result.scoring.ground_truth as GroundTruth;
+    for (const trial of result.trials) {
+      const { score, details } = scoreAnswer(trial.answer, scoringType, groundTruth);
+      trial.score = score;
+      trial.score_details = details;
+    }
+  }
+  const timestamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+  const scoredPath = join(resultsDir, `scored-${timestamp}.json`);
+  writeFileSync(scoredPath, JSON.stringify(resultsData, null, 2));
+  const md = generateSummary(resultsData);
+  const summaryPath = join(resultsDir, `summary-${timestamp}.md`);
+  writeFileSync(summaryPath, md);
+  return { scoredPath, summaryPath };
+}
+
+function scoreCombined(data: CombinedRunResult, resultsDir: string): { scoredPath: string; summaryPath: string } {
+  for (const result of data.results) {
+    const scoringType = result.scoring.type;
+    const groundTruth = result.scoring.ground_truth as GroundTruth;
+    for (const trial of result.raw_trials) {
+      const { score, details } = scoreAnswer(trial.answer, scoringType, groundTruth);
+      (trial as any).score = score;
+      (trial as any).score_details = details;
+    }
+    for (const trial of result.mcp_trials) {
+      const { score, details } = scoreAnswer(trial.answer, scoringType, groundTruth);
+      (trial as any).score = score;
+      (trial as any).score_details = details;
+    }
+  }
+  const timestamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+  const scoredPath = join(resultsDir, `scored-combined-${timestamp}.json`);
+  writeFileSync(scoredPath, JSON.stringify(data, null, 2));
+  const md = generateCombinedSummary(data);
+  const summaryPath = join(resultsDir, `summary-combined-${timestamp}.md`);
+  writeFileSync(summaryPath, md);
+  return { scoredPath, summaryPath };
+}
+
+export function scoreAndWrite(
+  data: any,
+  resultsDir: string = SCORER_RESULTS_DIR
+): { scoredPath: string; summaryPath: string } {
+  const isCombined = Array.isArray(data?.metadata?.modes);
+  if (isCombined) {
+    return scoreCombined(data as CombinedRunResult, resultsDir);
+  }
+  return scoreSingle(data, resultsDir);
+}
+
 // ─── Main ────────────────────────────────────────────────────────────────────
 
 function main() {
@@ -340,51 +431,11 @@ function main() {
     process.exit(1);
   }
 
-  const SCRIPT_DIR = resolve(
-    decodeURIComponent(
-      new URL(".", import.meta.url).pathname.replace(/^\/([A-Z]:)/, "$1")
-    )
-  );
-  const RESULTS_DIR = join(SCRIPT_DIR, "results");
-
-  // Load results
-  const resultsData = JSON.parse(
-    readFileSync(resolve(resultsPath), "utf-8")
-  );
-
-  // Score each trial
-  for (const result of resultsData.results) {
-    const scoringType = result.scoring.type;
-    const groundTruth = result.scoring.ground_truth as GroundTruth;
-
-    for (const trial of result.trials) {
-      const { score, details } = scoreAnswer(
-        trial.answer,
-        scoringType,
-        groundTruth
-      );
-      trial.score = score;
-      trial.score_details = details;
-    }
-  }
-
-  // Write scored results
-  const timestamp = new Date()
-    .toISOString()
-    .replace(/[:.]/g, "-")
-    .slice(0, 19);
-  const scoredPath = join(RESULTS_DIR, `scored-${timestamp}.json`);
-  writeFileSync(scoredPath, JSON.stringify(resultsData, null, 2));
+  const resultsData = JSON.parse(readFileSync(resolve(resultsPath), "utf-8"));
+  const { scoredPath, summaryPath } = scoreAndWrite(resultsData, SCORER_RESULTS_DIR);
   console.log(`Scored results: ${scoredPath}`);
-
-  // Generate summary markdown
-  const md = generateSummary(resultsData);
-  const summaryPath = join(RESULTS_DIR, `summary-${timestamp}.md`);
-  writeFileSync(summaryPath, md);
   console.log(`Summary: ${summaryPath}`);
-
-  // Print summary to console
-  console.log("\n" + md);
+  console.log("\n" + readFileSync(summaryPath, "utf-8"));
 }
 
 // ─── Summary Generation ─────────────────────────────────────────────────────
@@ -606,4 +657,181 @@ function generateSummary(data: any): string {
   return lines.join("\n");
 }
 
-main();
+// ─── Combined Summary Generation ─────────────────────────────────────────────
+
+function generateCombinedSummary(data: CombinedRunResult): string {
+  const lines: string[] = [];
+  const meta = data.metadata;
+
+  lines.push("# Combined Experiment Results — Raw vs MCP");
+  lines.push("");
+  lines.push(`- **Date:** ${meta.timestamp}`);
+  lines.push(`- **Model:** ${meta.model}`);
+  lines.push(`- **Modes:** raw + mcp`);
+  lines.push(`- **CLI Version:** ${meta.claude_cli_version ?? "N/A"}`);
+  lines.push(`- **Trials per prompt:** ${meta.trials_per_prompt}`);
+  lines.push(`- **Total prompts:** ${meta.total_prompts}`);
+  lines.push(`- **Raw phase:** ${meta.raw_start} → ${meta.raw_end}`);
+  lines.push(`- **MCP phase:** ${meta.mcp_start} → ${meta.mcp_end}`);
+  lines.push("");
+
+  // ── Table 1: Head-to-Head Comparison ───────────────────────────────────────
+  lines.push("## Table 1: Head-to-Head Comparison (Raw vs MCP)");
+  lines.push("");
+  lines.push("| # | Prompt | Diff | Raw Score | MCP Score | Δ Score | Raw Tokens | MCP Tokens | Token Δ% | Raw Cost | MCP Cost |");
+  lines.push("|---|--------|------|-----------|-----------|---------|------------|------------|----------|----------|----------|");
+
+  let totalRawScore = 0, totalMcpScore = 0;
+  let totalRawTokens = 0, totalMcpTokens = 0;
+  let totalRawCost = 0, totalMcpCost = 0;
+  let totalPrompts = 0;
+
+  for (const r of data.results) {
+    const rawTrials = r.raw_trials as any[];
+    const mcpTrials = r.mcp_trials as any[];
+
+    const rawScore = rawTrials.length > 0
+      ? rawTrials.reduce((s, t) => s + (t.score ?? 0), 0) / rawTrials.length : 0;
+    const mcpScore = mcpTrials.length > 0
+      ? mcpTrials.reduce((s, t) => s + (t.score ?? 0), 0) / mcpTrials.length : 0;
+    const rawTokens = rawTrials.length > 0
+      ? Math.round(rawTrials.reduce((s, t) => s + (t.tokens_in ?? 0) + (t.tokens_out ?? 0), 0) / rawTrials.length) : 0;
+    const mcpTokens = mcpTrials.length > 0
+      ? Math.round(mcpTrials.reduce((s, t) => s + (t.tokens_in ?? 0) + (t.tokens_out ?? 0), 0) / mcpTrials.length) : 0;
+    const rawCost = rawTrials.length > 0
+      ? rawTrials.reduce((s, t) => s + (t.cost_usd ?? 0), 0) / rawTrials.length : 0;
+    const mcpCost = mcpTrials.length > 0
+      ? mcpTrials.reduce((s, t) => s + (t.cost_usd ?? 0), 0) / mcpTrials.length : 0;
+
+    const deltaScore = mcpScore - rawScore;
+    const tokenDeltaPct = rawTokens > 0
+      ? ((mcpTokens - rawTokens) / rawTokens * 100).toFixed(0) + "%" : "N/A";
+    const shortPrompt = r.prompt.length > 34 ? r.prompt.slice(0, 31) + "..." : r.prompt;
+
+    lines.push(
+      `| ${r.id} | ${shortPrompt} | ${r.difficulty} | ${rawScore.toFixed(2)} | ${mcpScore.toFixed(2)} | ${deltaScore >= 0 ? "+" : ""}${deltaScore.toFixed(2)} | ${rawTokens.toLocaleString()} | ${mcpTokens.toLocaleString()} | ${tokenDeltaPct} | $${rawCost.toFixed(4)} | $${mcpCost.toFixed(4)} |`
+    );
+
+    totalRawScore += rawScore; totalMcpScore += mcpScore;
+    totalRawTokens += rawTokens; totalMcpTokens += mcpTokens;
+    totalRawCost += rawCost; totalMcpCost += mcpCost;
+    totalPrompts++;
+  }
+
+  const overallDelta = totalPrompts > 0 ? (totalMcpScore - totalRawScore) / totalPrompts : 0;
+  const overallTokenDeltaPct = totalRawTokens > 0
+    ? ((totalMcpTokens - totalRawTokens) / totalRawTokens * 100).toFixed(0) + "%" : "N/A";
+  const meanRawScore = totalPrompts > 0 ? totalRawScore / totalPrompts : 0;
+  const meanMcpScore = totalPrompts > 0 ? totalMcpScore / totalPrompts : 0;
+
+  lines.push(
+    `| - | **TOTALS/MEANS** | | **${meanRawScore.toFixed(2)}** | **${meanMcpScore.toFixed(2)}** | **${overallDelta >= 0 ? "+" : ""}${overallDelta.toFixed(2)}** | ${totalRawTokens.toLocaleString()} | ${totalMcpTokens.toLocaleString()} | ${overallTokenDeltaPct} | $${totalRawCost.toFixed(4)} | $${totalMcpCost.toFixed(4)} |`
+  );
+  lines.push("");
+
+  // ── Table 2: Raw — Scores & Metrics ────────────────────────────────────────
+  lines.push("## Table 2: Raw Mode — Scores & Metrics");
+  lines.push("");
+  const trialCount = meta.trials_per_prompt;
+  const trialHeaders = Array.from({ length: trialCount }, (_, i) => `T${i + 1}`).join(" | ");
+  lines.push(`| # | Prompt | Diff | ${trialHeaders} | Mean | Avg Tokens | Avg Tools | Avg Time(s) | Avg Cost |`);
+  lines.push(`|---|--------|------|${Array(trialCount).fill("----").join("|")}|------|------------|-----------|-------------|----------|`);
+
+  for (const r of data.results) {
+    const trials = r.raw_trials as any[];
+    if (trials.length === 0) continue;
+    const trialScores = trials.map(t => (t.score ?? 0).toFixed(1)).join(" | ");
+    const mean = trials.reduce((s, t) => s + (t.score ?? 0), 0) / trials.length;
+    const avgTok = Math.round(trials.reduce((s, t) => s + (t.tokens_in ?? 0) + (t.tokens_out ?? 0), 0) / trials.length);
+    const avgTools = Math.round(trials.reduce((s, t) => s + (t.tool_calls ?? 0), 0) / trials.length);
+    const avgTime = (trials.reduce((s, t) => s + (t.wall_time_ms ?? 0), 0) / trials.length / 1000).toFixed(1);
+    const avgCost = (trials.reduce((s, t) => s + (t.cost_usd ?? 0), 0) / trials.length).toFixed(4);
+    const shortPrompt = r.prompt.length > 34 ? r.prompt.slice(0, 31) + "..." : r.prompt;
+    lines.push(`| ${r.id} | ${shortPrompt} | ${r.difficulty} | ${trialScores} | ${mean.toFixed(2)} | ${avgTok.toLocaleString()} | ${avgTools} | ${avgTime} | $${avgCost} |`);
+  }
+  lines.push("");
+
+  // ── Table 3: MCP — Scores & Metrics ────────────────────────────────────────
+  lines.push("## Table 3: MCP Mode — Scores & Metrics");
+  lines.push("");
+  lines.push(`| # | Prompt | Diff | ${trialHeaders} | Mean | Avg Tokens | Avg Tools | Avg Time(s) | Avg Cost |`);
+  lines.push(`|---|--------|------|${Array(trialCount).fill("----").join("|")}|------|------------|-----------|-------------|----------|`);
+
+  for (const r of data.results) {
+    const trials = r.mcp_trials as any[];
+    if (trials.length === 0) continue;
+    const trialScores = trials.map(t => (t.score ?? 0).toFixed(1)).join(" | ");
+    const mean = trials.reduce((s, t) => s + (t.score ?? 0), 0) / trials.length;
+    const avgTok = Math.round(trials.reduce((s, t) => s + (t.tokens_in ?? 0) + (t.tokens_out ?? 0), 0) / trials.length);
+    const avgTools = Math.round(trials.reduce((s, t) => s + (t.tool_calls ?? 0), 0) / trials.length);
+    const avgTime = (trials.reduce((s, t) => s + (t.wall_time_ms ?? 0), 0) / trials.length / 1000).toFixed(1);
+    const avgCost = (trials.reduce((s, t) => s + (t.cost_usd ?? 0), 0) / trials.length).toFixed(4);
+    const shortPrompt = r.prompt.length > 34 ? r.prompt.slice(0, 31) + "..." : r.prompt;
+    lines.push(`| ${r.id} | ${shortPrompt} | ${r.difficulty} | ${trialScores} | ${mean.toFixed(2)} | ${avgTok.toLocaleString()} | ${avgTools} | ${avgTime} | $${avgCost} |`);
+  }
+  lines.push("");
+
+  // ── Table 4: Aggregates by Difficulty — Raw vs MCP ─────────────────────────
+  lines.push("## Table 4: Aggregates by Difficulty — Raw vs MCP");
+  lines.push("");
+  lines.push("| Difficulty | Raw Score | MCP Score | Δ Score | Raw Tokens | MCP Tokens | Token Δ% | Raw Cost | MCP Cost |");
+  lines.push("|------------|-----------|-----------|---------|------------|------------|----------|----------|----------|");
+
+  for (const diff of ["easy", "medium", "hard"]) {
+    const diffResults = data.results.filter(r => r.difficulty === diff);
+    if (diffResults.length === 0) continue;
+
+    let rScore = 0, mScore = 0, rTok = 0, mTok = 0, rCost = 0, mCost = 0;
+    let rCount = 0, mCount = 0;
+
+    for (const r of diffResults) {
+      for (const t of r.raw_trials as any[]) {
+        rScore += t.score ?? 0;
+        rTok += (t.tokens_in ?? 0) + (t.tokens_out ?? 0);
+        rCost += t.cost_usd ?? 0;
+        rCount++;
+      }
+      for (const t of r.mcp_trials as any[]) {
+        mScore += t.score ?? 0;
+        mTok += (t.tokens_in ?? 0) + (t.tokens_out ?? 0);
+        mCost += t.cost_usd ?? 0;
+        mCount++;
+      }
+    }
+
+    const meanR = rCount > 0 ? rScore / rCount : 0;
+    const meanM = mCount > 0 ? mScore / mCount : 0;
+    const avgRTok = rCount > 0 ? Math.round(rTok / rCount) : 0;
+    const avgMTok = mCount > 0 ? Math.round(mTok / mCount) : 0;
+    const tokDelta = avgRTok > 0 ? ((avgMTok - avgRTok) / avgRTok * 100).toFixed(0) + "%" : "N/A";
+    const avgRCost = rCount > 0 ? rCost / rCount : 0;
+    const avgMCost = mCount > 0 ? mCost / mCount : 0;
+    const delta = meanM - meanR;
+
+    lines.push(
+      `| ${diff} | ${meanR.toFixed(2)} | ${meanM.toFixed(2)} | ${delta >= 0 ? "+" : ""}${delta.toFixed(2)} | ${avgRTok.toLocaleString()} | ${avgMTok.toLocaleString()} | ${tokDelta} | $${avgRCost.toFixed(4)} | $${avgMCost.toFixed(4)} |`
+    );
+  }
+  lines.push("");
+
+  // ── Score Details ───────────────────────────────────────────────────────────
+  lines.push("## Score Details");
+  lines.push("");
+  for (const r of data.results) {
+    lines.push(`### Prompt ${r.id}: ${r.prompt}`);
+    lines.push(`- **Difficulty:** ${r.difficulty} | **Category:** ${r.category} | **Scoring:** ${r.scoring.type}`);
+    for (const t of r.raw_trials as any[]) {
+      lines.push(`- Raw Trial ${t.trial}: **${(t.score ?? 0).toFixed(1)}** — ${t.score_details ?? "N/A"}`);
+    }
+    for (const t of r.mcp_trials as any[]) {
+      lines.push(`- MCP Trial ${t.trial}: **${(t.score ?? 0).toFixed(1)}** — ${t.score_details ?? "N/A"}`);
+    }
+    lines.push("");
+  }
+
+  return lines.join("\n");
+}
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  main();
+}

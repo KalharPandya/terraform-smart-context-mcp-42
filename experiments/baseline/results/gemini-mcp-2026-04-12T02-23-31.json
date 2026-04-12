@@ -1,0 +1,2594 @@
+{
+  "metadata": {
+    "mode": "mcp",
+    "model": "gemini-3-flash-preview",
+    "timestamp": "2026-04-12T02:23:31.563Z",
+    "infra_path": "/Users/parinshah/Documents/NEU/Sem IV/BSDS/project/terraform-smart-context-mcp-42/experiments/baseline/dummy-infra",
+    "trials_per_prompt": 2,
+    "total_prompts": 30,
+    "gemini_cli_version": "0.37.1"
+  },
+  "results": [
+    {
+      "id": 1,
+      "prompt": "What is the CIDR block of the VPC?",
+      "difficulty": "easy",
+      "category": "attribute-lookup",
+      "scoring": {
+        "type": "substring-match",
+        "ground_truth": {
+          "substrings": [
+            "10.0.0.0/16"
+          ]
+        }
+      },
+      "trials": [
+        {
+          "trial": 1,
+          "answer": "The CIDR block of the VPC (`module.networking.null_resource.vpc`) is **10.0.0.0/16**.",
+          "tokens_in": 41282,
+          "tokens_out": 509,
+          "cost_usd": 0,
+          "tool_calls": 3,
+          "tool_call_details": [
+            {
+              "name": "mcp_terraform_terraform",
+              "input": {
+                "type": "schema",
+                "workingDir": "/var/folders/zh/yms1gjd96710vz87_cq258l40000gn/T/exp-gemini-5cb5ada6-39f1-4483-b79d-3afcdcf16933"
+              },
+              "output_preview": "# GraphQL SDL\n```graphql\n\n  scalar JSON\n\n  type Query {\n    resource(id: String!): Resource\n    resources(module: String, type: String, limit: Int): ResourceConnection!\n    module(name: String!): Module\n    modules: [Module!]!\n    path(fromId: String!, toId: String!, maxDepth: Int): PathResult\n    impact(resourceId: String!, depth: Int): ImpactResult!\n    deploymentOrder(module: String): [Resource!]!\n    summary: InfraSummary!\n  }\n\n  type Resource {\n    id: String!\n    shortName: String!\n    mod",
+              "output_chars": 3407,
+              "tokens_in_this_turn": 0,
+              "tokens_out_this_turn": 0,
+              "is_error": false
+            },
+            {
+              "name": "mcp_terraform_terraform",
+              "input": {
+                "workingDir": "/var/folders/zh/yms1gjd96710vz87_cq258l40000gn/T/exp-gemini-5cb5ada6-39f1-4483-b79d-3afcdcf16933",
+                "query": "\nquery NetworkingResources {\n  module(name: \"networking\") {\n    resources {\n      id\n      shortName\n      resourceType\n    }\n  }\n}\n",
+                "type": "query"
+              },
+              "output_preview": "{\n  \"module\": {\n    \"resources\": [\n      {\n        \"id\": \"module.networking.null_resource.db_subnet_1\",\n        \"shortName\": \"db_subnet_1\",\n        \"resourceType\": \"null_resource\"\n      },\n      {\n        \"id\": \"module.networking.null_resource.db_subnet_2\",\n        \"shortName\": \"db_subnet_2\",\n        \"resourceType\": \"null_resource\"\n      },\n      {\n        \"id\": \"module.networking.null_resource.eip_nat\",\n        \"shortName\": \"eip_nat\",\n        \"resourceType\": \"null_resource\"\n      },\n      {\n   ",
+              "output_chars": 2431,
+              "tokens_in_this_turn": 0,
+              "tokens_out_this_turn": 0,
+              "is_error": false
+            },
+            {
+              "name": "mcp_terraform_terraform",
+              "input": {
+                "type": "query",
+                "workingDir": "/var/folders/zh/yms1gjd96710vz87_cq258l40000gn/T/exp-gemini-5cb5ada6-39f1-4483-b79d-3afcdcf16933",
+                "query": "\nquery VpcAttributes {\n  resource(id: \"module.networking.null_resource.vpc\") {\n    id\n    attributes\n    tags\n  }\n}\n"
+              },
+              "output_preview": "{\n  \"resource\": {\n    \"id\": \"module.networking.null_resource.vpc\",\n    \"attributes\": {\n      \"id\": \"3289250653767393413\",\n      \"triggers\": {\n        \"approved_by\": \"platform-team@project42.example.com\",\n        \"arn\": \"arn:aws:ec2:us-east-1:123456789012:vpc/vpc-0a1b2c3d4e5f60001\",\n        \"aws_account_id\": \"123456789012\",\n        \"aws_region\": \"us-east-1\",\n        \"backup_enabled\": \"true\",\n        \"change_ticket\": \"CHG-2026-00042\",\n        \"cidr_block\": \"10.0.0.0/16\",\n        \"compliance_check\"",
+              "output_chars": 1781,
+              "tokens_in_this_turn": 0,
+              "tokens_out_this_turn": 0,
+              "is_error": false
+            }
+          ],
+          "wall_time_ms": 12641,
+          "num_turns": 4,
+          "stop_reason": "success",
+          "files_accessed": [],
+          "terraform_commands": [],
+          "mcp_tools_used": [
+            "mcp_terraform_terraform",
+            "mcp_terraform_terraform",
+            "mcp_terraform_terraform"
+          ],
+          "total_tool_output_chars": 7619
+        },
+        {
+          "trial": 2,
+          "answer": "The CIDR block of the VPC is **10.0.0.0/16**.",
+          "tokens_in": 177729,
+          "tokens_out": 2478,
+          "cost_usd": 0,
+          "tool_calls": 5,
+          "tool_call_details": [
+            {
+              "name": "run_shell_command",
+              "input": {
+                "description": "Retrieving the Terraform MCP schema and prebuilt queries.",
+                "command": "mcp-terraform get_schema --workingDir \"/var/folders/zh/yms1gjd96710vz87_cq258l40000gn/T/exp-gemini-5cb5ada6-39f1-4483-b79d-3afcdcf16933\""
+              },
+              "output_preview": "/bin/bash: line 1: mcp-terraform: command not found",
+              "output_chars": 51,
+              "tokens_in_this_turn": 0,
+              "tokens_out_this_turn": 0,
+              "is_error": false
+            },
+            {
+              "name": "get_schema",
+              "input": {
+                "workingDir": "/var/folders/zh/yms1gjd96710vz87_cq258l40000gn/T/exp-gemini-5cb5ada6-39f1-4483-b79d-3afcdcf16933"
+              },
+              "output_preview": "Tool \"get_schema\" not found. Did you mean one of: \"grep_search\", \"replace\", \"cli_help\"?",
+              "output_chars": 87,
+              "tokens_in_this_turn": 0,
+              "tokens_out_this_turn": 0,
+              "is_error": true
+            },
+            {
+              "name": "list_directory",
+              "input": {
+                "dir_path": "/var/folders/zh/yms1gjd96710vz87_cq258l40000gn/T/exp-gemini-5cb5ada6-39f1-4483-b79d-3afcdcf16933"
+              },
+              "output_preview": "",
+              "output_chars": 0,
+              "tokens_in_this_turn": 0,
+              "tokens_out_this_turn": 0,
+              "is_error": false
+            },
+            {
+              "name": "terraform_state_list",
+              "input": {
+                "workingDir": "/var/folders/zh/yms1gjd96710vz87_cq258l40000gn/T/exp-gemini-5cb5ada6-39f1-4483-b79d-3afcdcf16933"
+              },
+              "output_preview": "Tool \"terraform_state_list\" not found. Did you mean one of: \"generalist\", \"write_file\", \"enter_plan_mode\"?",
+              "output_chars": 106,
+              "tokens_in_this_turn": 0,
+              "tokens_out_this_turn": 0,
+              "is_error": true
+            },
+            {
+              "name": "generalist",
+              "input": {
+                "request": "Using the MCP tools from the terraform MCP server (get_schema, terraform_state_list, etc.), find the CIDR block of the VPC in the terraform project at /var/folders/zh/yms1gjd96710vz87_cq258l40000gn/T/exp-gemini-5cb5ada6-39f1-4483-b79d-3afcdcf16933. Use workingDir: \"/var/folders/zh/yms1gjd96710vz87_cq258l40000gn/T/exp-gemini-5cb5ada6-39f1-4483-b79d-3afcdcf16933\" for every tool call."
+              },
+              "output_preview": "",
+              "output_chars": 0,
+              "tokens_in_this_turn": 0,
+              "tokens_out_this_turn": 0,
+              "is_error": false
+            }
+          ],
+          "wall_time_ms": 71430,
+          "num_turns": 4,
+          "stop_reason": "success",
+          "files_accessed": [],
+          "terraform_commands": [
+            "get_schema --workingDir \"/var/folders/zh/yms1gjd96710vz87_cq258l40000gn/T/exp-gemini-5cb5ada6-39f1-4483-b79d-3afcdcf16933\""
+          ],
+          "mcp_tools_used": [
+            "get_schema",
+            "terraform_state_list",
+            "generalist"
+          ],
+          "total_tool_output_chars": 244
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "What is the public IP of the bastion host?",
+      "difficulty": "easy",
+      "category": "attribute-lookup",
+      "scoring": {
+        "type": "substring-match",
+        "ground_truth": {
+          "substrings": [
+            "54.210.167.100"
+          ]
+        }
+      },
+      "trials": [
+        {
+          "trial": 1,
+          "answer": "The public IP of the bastion host (`module.compute.null_resource.bastion`) is **54.210.167.100**.",
+          "tokens_in": 41654,
+          "tokens_out": 515,
+          "cost_usd": 0,
+          "tool_calls": 3,
+          "tool_call_details": [
+            {
+              "name": "mcp_terraform_terraform",
+              "input": {
+                "workingDir": "/var/folders/zh/yms1gjd96710vz87_cq258l40000gn/T/exp-gemini-f9b49841-a686-4691-9903-b759f882e0dd",
+                "type": "schema"
+              },
+              "output_preview": "# GraphQL SDL\n```graphql\n\n  scalar JSON\n\n  type Query {\n    resource(id: String!): Resource\n    resources(module: String, type: String, limit: Int): ResourceConnection!\n    module(name: String!): Module\n    modules: [Module!]!\n    path(fromId: String!, toId: String!, maxDepth: Int): PathResult\n    impact(resourceId: String!, depth: Int): ImpactResult!\n    deploymentOrder(module: String): [Resource!]!\n    summary: InfraSummary!\n  }\n\n  type Resource {\n    id: String!\n    shortName: String!\n    mod",
+              "output_chars": 3407,
+              "tokens_in_this_turn": 0,
+              "tokens_out_this_turn": 0,
+              "is_error": false
+            },
+            {
+              "name": "mcp_terraform_terraform",
+              "input": {
+                "query": "\nquery FindBastion {\n  resources(module: \"compute\", limit: 50) {\n    nodes {\n      id\n      shortName\n      resourceType\n    }\n  }\n}\n",
+                "workingDir": "/var/folders/zh/yms1gjd96710vz87_cq258l40000gn/T/exp-gemini-f9b49841-a686-4691-9903-b759f882e0dd",
+                "type": "query"
+              },
+              "output_preview": "{\n  \"resources\": {\n    \"nodes\": [\n      {\n        \"id\": \"module.compute.null_resource.app_instance_1\",\n        \"shortName\": \"app_instance_1\",\n        \"resourceType\": \"null_resource\"\n      },\n      {\n        \"id\": \"module.compute.null_resource.app_instance_2\",\n        \"shortName\": \"app_instance_2\",\n        \"resourceType\": \"null_resource\"\n      },\n      {\n        \"id\": \"module.compute.null_resource.asg_app\",\n        \"shortName\": \"asg_app\",\n        \"resourceType\": \"null_resource\"\n      },\n      {\n ",
+              "output_chars": 2570,
+              "tokens_in_this_turn": 0,
+              "tokens_out_this_turn": 0,
+              "is_error": false
+            },
+            {
+              "name": "mcp_terraform_terraform",
+              "input": {
+                "query": "\nquery BastionAttributes {\n  resource(id: \"module.compute.null_resource.bastion\") {\n    id\n    shortName\n    attributes\n  }\n}\n",
+                "type": "query",
+                "workingDir": "/var/folders/zh/yms1gjd96710vz87_cq258l40000gn/T/exp-gemini-f9b49841-a686-4691-9903-b759f882e0dd"
+              },
+              "output_preview": "{\n  \"resource\": {\n    \"id\": \"module.compute.null_resource.bastion\",\n    \"shortName\": \"bastion\",\n    \"attributes\": {\n      \"id\": \"311515444914627856\",\n      \"triggers\": {\n        \"ami_id\": \"ami-0a1b2c3d4e5f60003\",\n        \"approved_by\": \"platform-team@project42.example.com\",\n        \"arn\": \"arn:aws:ec2:us-east-1:123456789012:instance/i-bastion-0a1b2c3d4e5f0001\",\n        \"availability_zone\": \"us-east-1a\",\n        \"aws_account_id\": \"123456789012\",\n        \"aws_region\": \"us-east-1\",\n        \"backup_",
+              "output_chars": 1885,
+              "tokens_in_this_turn": 0,
+              "tokens_out_this_turn": 0,
+              "is_error": false
+            }
+          ],
+          "wall_time_ms": 13800,
+          "num_turns": 3,
+          "stop_reason": "success",
+          "files_accessed": [],
+          "terraform_commands": [],
+          "mcp_tools_used": [
+            "mcp_terraform_terraform",
+            "mcp_terraform_terraform",
+            "mcp_terraform_terraform"
+          ],
+          "total_tool_output_chars": 7862
+        },
+        {
+          "trial": 2,
+          "answer": "The public IP of the bastion host is **54.210.167.100**.\n\nThis information was found in the Terraform state for the resource `module.compute.null_resource.bastion` under its `triggers` attribute, which contains the following details:\n- **Instance ID:** `i-bastion-0a1b2c3d4e5f0001`\n- **Public IP:** `54.210.167.100`\n- **Public DNS:** `ec2-54-210-167-100.compute-1.amazonaws.com`\n- **Private IP:** `10.0.1.50`",
+          "tokens_in": 42276,
+          "tokens_out": 854,
+          "cost_usd": 0,
+          "tool_calls": 4,
+          "tool_call_details": [
+            {
+              "name": "run_shell_command",
+              "input": {
+                "command": "echo '{\"workingDir\": \"/var/folders/zh/yms1gjd96710vz87_cq258l40000gn/T/exp-gemini-f9b49841-a686-4691-9903-b759f882e0dd\"}' | mcp-terraform get_schema",
+                "description": "Retrieve the GraphQL schema and prebuilt queries for the Terraform project."
+              },
+              "output_preview": "/bin/bash: line 1: mcp-terraform: command not found",
+              "output_chars": 51,
+              "tokens_in_this_turn": 0,
+              "tokens_out_this_turn": 0,
+              "is_error": false
+            },
+            {
+              "name": "run_shell_command",
+              "input": {
+                "command": "terraform state list | grep bastion",
+                "dir_path": "/var/folders/zh/yms1gjd96710vz87_cq258l40000gn/T/exp-gemini-f9b49841-a686-4691-9903-b759f882e0dd",
+                "description": "List resources in the Terraform state and filter for 'bastion' to find the bastion host resource name."
+              },
+              "output_preview": "module.compute.null_resource.bastion",
+              "output_chars": 36,
+              "tokens_in_this_turn": 0,
+              "tokens_out_this_turn": 0,
+              "is_error": false
+            },
+            {
+              "name": "run_shell_command",
+              "input": {
+                "command": "terraform state list",
+                "description": "List all resources in the Terraform state to get a complete overview of the deployed infrastructure.",
+                "dir_path": "/var/folders/zh/yms1gjd96710vz87_cq258l40000gn/T/exp-gemini-f9b49841-a686-4691-9903-b759f882e0dd"
+              },
+              "output_preview": "module.compute.null_resource.app_instance_1\nmodule.compute.null_resource.app_instance_2\nmodule.compute.null_resource.asg_app\nmodule.compute.null_resource.asg_web\nmodule.compute.null_resource.bastion\nmodule.compute.null_resource.cw_alarm_asg_app\nmodule.compute.null_resource.cw_alarm_asg_web\nmodule.compute.null_resource.instance_profile_app\nmodule.compute.null_resource.instance_profile_web\nmodule.compute.null_resource.key_pair\nmodule.compute.null_resource.launch_template_app\nmodule.compute.null_re",
+              "output_chars": 3443,
+              "tokens_in_this_turn": 0,
+              "tokens_out_this_turn": 0,
+              "is_error": false
+            },
+            {
+              "name": "run_shell_command",
+              "input": {
+                "description": "Show details of the bastion host resource in the Terraform state.",
+                "dir_path": "/var/folders/zh/yms1gjd96710vz87_cq258l40000gn/T/exp-gemini-f9b49841-a686-4691-9903-b759f882e0dd",
+                "command": "terraform state show module.compute.null_resource.bastion"
+              },
+              "output_preview": "# module.compute.null_resource.bastion:\nresource \"null_resource\" \"bastion\" {\n    id       = \"311515444914627856\"\n    triggers = {\n        \"ami_id\"              = \"ami-0a1b2c3d4e5f60003\"\n        \"approved_by\"         = \"platform-team@project42.example.com\"\n        \"arn\"                 = \"arn:aws:ec2:us-east-1:123456789012:instance/i-bastion-0a1b2c3d4e5f0001\"\n        \"availability_zone\"   = \"us-east-1a\"\n        \"aws_account_id\"      = \"123456789012\"\n        \"aws_region\"          = \"us-east-1\"\n   ",
+              "output_chars": 2161,
+              "tokens_in_this_turn": 0,
+              "tokens_out_this_turn": 0,
+              "is_error": false
+            }
+          ],
+          "wall_time_ms": 22359,
+          "num_turns": 6,
+          "stop_reason": "success",
+          "files_accessed": [],
+          "terraform_commands": [
+            "get_schema",
+            "state list | grep bastion",
+            "state list",
+            "state show module.compute.null_resource.bastion"
+          ],
+          "mcp_tools_used": [],
+          "total_tool_output_chars": 5691
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "What database engine and port does the RDS primary instance use?",
+      "difficulty": "easy",
+      "category": "attribute-lookup",
+      "scoring": {
+        "type": "substring-match",
+        "ground_truth": {
+          "substrings": [
+            "postgresql",
+            "5432"
+          ]
+        }
+      },
+      "trials": [
+        {
+          "trial": 1,
+          "answer": "The RDS primary instance (`module.database.null_resource.rds_primary`) uses the **PostgreSQL** database engine on port **5432**.",
+          "tokens_in": 62465,
+          "tokens_out": 799,
+          "cost_usd": 0,
+          "tool_calls": 5,
+          "tool_call_details": [
+            {
+              "name": "mcp_terraform_terraform",
+              "input": {
+                "type": "schema",
+                "workingDir": "/var/folders/zh/yms1gjd96710vz87_cq258l40000gn/T/exp-gemini-bfe00439-9a01-440f-9102-89e4d41dbcd3"
+              },
+              "output_preview": "# GraphQL SDL\n```graphql\n\n  scalar JSON\n\n  type Query {\n    resource(id: String!): Resource\n    resources(module: String, type: String, limit: Int): ResourceConnection!\n    module(name: String!): Module\n    modules: [Module!]!\n    path(fromId: String!, toId: String!, maxDepth: Int): PathResult\n    impact(resourceId: String!, depth: Int): ImpactResult!\n    deploymentOrder(module: String): [Resource!]!\n    summary: InfraSummary!\n  }\n\n  type Resource {\n    id: String!\n    shortName: String!\n    mod",
+              "output_chars": 3407,
+              "tokens_in_this_turn": 0,
+              "tokens_out_this_turn": 0,
+              "is_error": false
+            },
+            {
+              "name": "mcp_terraform_terraform",
+              "input": {
+                "workingDir": "/var/folders/zh/yms1gjd96710vz87_cq258l40000gn/T/exp-gemini-bfe00439-9a01-440f-9102-89e4d41dbcd3",
+                "type": "query",
+                "query": "query InfraSummary {\n  summary {\n    totalResources\n    totalModules\n    moduleNames\n    typeBreakdown { resourceType count }\n  }\n}"
+              },
+              "output_preview": "{\n  \"summary\": {\n    \"totalResources\": 75,\n    \"totalModules\": 6,\n    \"moduleNames\": [\n      \"compute\",\n      \"database\",\n      \"loadbalancer\",\n      \"monitoring\",\n      \"networking\",\n      \"security\"\n    ],\n    \"typeBreakdown\": [\n      {\n        \"resourceType\": \"null_resource\",\n        \"count\": 75\n      }\n    ]\n  }\n}",
+              "output_chars": 319,
+              "tokens_in_this_turn": 0,
+              "tokens_out_this_turn": 0,
+              "is_error": false
+            },
+            {
+              "name": "mcp_terraform_terraform",
+              "input": {
+                "type": "query",
+                "workingDir": "/var/folders/zh/yms1gjd96710vz87_cq258l40000gn/T/exp-gemini-bfe00439-9a01-440f-9102-89e4d41bcd3",
+                "query": "query DatabaseModule {\n  module(name: \"database\") {\n    name\n    resourceCount\n    resources { id shortName resourceType }\n  }\n}"
+              },
+              "output_preview": "Error: MCP tool 'terraform' reported an error.",
+              "output_chars": 46,
+              "tokens_in_this_turn": 0,
+              "tokens_out_this_turn": 0,
+              "is_error": true
+            },
+            {
+              "name": "mcp_terraform_terraform",
+              "input": {
+                "type": "query",
+                "workingDir": "/var/folders/zh/yms1gjd96710vz87_cq258l40000gn/T/exp-gemini-bfe00439-9a01-440f-9102-89e4d41dbcd3",
+                "query": "query DatabaseModule {\n  module(name: \"database\") {\n    name\n    resourceCount\n    resources { id shortName resourceType }\n  }\n}"
+              },
+              "output_preview": "{\n  \"module\": {\n    \"name\": \"database\",\n    \"resourceCount\": 10,\n    \"resources\": [\n      {\n        \"id\": \"module.database.null_resource.db_option_group\",\n        \"shortName\": \"db_option_group\",\n        \"resourceType\": \"null_resource\"\n      },\n      {\n        \"id\": \"module.database.null_resource.db_parameter_group\",\n        \"shortName\": \"db_parameter_group\",\n        \"resourceType\": \"null_resource\"\n      },\n      {\n        \"id\": \"module.database.null_resource.db_subnet_group\",\n        \"shortName\"",
+              "output_chars": 1764,
+              "tokens_in_this_turn": 0,
+              "tokens_out_this_turn": 0,
+              "is_error": false
+            },
+            {
+              "name": "mcp_terraform_terraform",
+              "input": {
+                "query": "query RdsPrimaryAttributes {\n  resource(id: \"module.database.null_resource.rds_primary\") {\n    id\n    shortName\n    attributes\n    tags\n  }\n}",
+                "workingDir": "/var/folders/zh/yms1gjd96710vz87_cq258l40000gn/T/exp-gemini-bfe00439-9a01-440f-9102-89e4d41dbcd3",
+                "type": "query"
+              },
+              "output_preview": "{\n  \"resource\": {\n    \"id\": \"module.database.null_resource.rds_primary\",\n    \"shortName\": \"rds_primary\",\n    \"attributes\": {\n      \"id\": \"6142091660799348466\",\n      \"triggers\": {\n        \"address\": \"prod-primary.c9abc123.us-east-1.rds.amazonaws.com\",\n        \"allocated_storage\": \"500\",\n        \"approved_by\": \"platform-team@project42.example.com\",\n        \"arn\": \"arn:aws:rds:us-east-1:123456789012:db:db-prod-primary-a1b2c3d4\",\n        \"auto_minor_version_upgrade\": \"true\",\n        \"aws_account_id",
+              "output_chars": 3010,
+              "tokens_in_this_turn": 0,
+              "tokens_out_this_turn": 0,
+              "is_error": false
+            }
+          ],
+          "wall_time_ms": 17345,
+          "num_turns": 4,
+          "stop_reason": "success",
+          "files_accessed": [],
+          "terraform_commands": [],
+          "mcp_tools_used": [
+            "mcp_terraform_terraform",
+            "mcp_terraform_terraform",
+            "mcp_terraform_terraform",
+            "mcp_terraform_terraform",
+            "mcp_terraform_terraform"
+          ],
+          "total_tool_output_chars": 8546
+        },
+        {
+          "trial": 2,
+          "answer": "The RDS primary instance, identified as `project42-prod-rds-primary`, uses the **postgresql** database engine and is configured to listen on port **5432**.",
+          "tokens_in": 73906,
+          "tokens_out": 1037,
+          "cost_usd": 0,
+          "tool_calls": 8,
+          "tool_call_details": [
+            {
+              "name": "run_shell_command",
+              "input": {
+                "description": "Get the GraphQL schema for the Terraform project.",
+                "command": "mcp-terraform get_schema --workingDir \"/var/folders/zh/yms1gjd96710vz87_cq258l40000gn/T/exp-gemini-bfe00439-9a01-440f-9102-89e4d41dbcd3\""
+              },
+              "output_preview": "/bin/bash: line 1: mcp-terraform: command not found",
+              "output_chars": 51,
+              "tokens_in_this_turn": 0,
+              "tokens_out_this_turn": 0,
+              "is_error": false
+            },
+            {
+              "name": "get_schema",
+              "input": {
+                "workingDir": "/var/folders/zh/yms1gjd96710vz87_cq258l40000gn/T/exp-gemini-bfe00439-9a01-440f-9102-89e4d41dbcd3"
+              },
+              "output_preview": "Tool \"get_schema\" not found. Did you mean one of: \"grep_search\", \"replace\", \"cli_help\"?",
+              "output_chars": 87,
+              "tokens_in_this_turn": 0,
+              "tokens_out_this_turn": 0,
+              "is_error": true
+            },
+            {
+              "name": "list_directory",
+              "input": {
+                "dir_path": "/var/folders/zh/yms1gjd96710vz87_cq258l40000gn/T/exp-gemini-bfe00439-9a01-440f-9102-89e4d41dbcd3"
+              },
+              "output_preview": "",
+              "output_chars": 0,
+              "tokens_in_this_turn": 0,
+              "tokens_out_this_turn": 0,
+              "is_error": false
+            },
+            {
+              "name": "run_shell_command",
+              "input": {
+                "description": "Search for terraform-related binaries in standard paths.",
+                "command": "ls /usr/local/bin /usr/bin /bin /usr/sbin /sbin /opt/homebrew/bin 2>/dev/null | grep terraform"
+              },
+              "output_preview": "terraform",
+              "output_chars": 9,
+              "tokens_in_this_turn": 0,
+              "tokens_out_this_turn": 0,
+              "is_error": false
+            },
+            {
+              "name": "terraform_state_list",
+              "input": {
+                "workingDir": "/var/folders/zh/yms1gjd96710vz87_cq258l40000gn/T/exp-gemini-bfe00439-9a01-440f-9102-89e4d41dbcd3"
+              },
+              "output_preview": "Tool \"terraform_state_list\" not found. Did you mean one of: \"generalist\", \"write_file\", \"enter_plan_mode\"?",
+              "output_chars": 106,
+              "tokens_in_this_turn": 0,
+              "tokens_out_this_turn": 0,
+              "is_error": true
+            },
+            {
+              "name": "grep_search",
+              "input": {
+                "dir_path": "/var/folders/zh/yms1gjd96710vz87_cq258l40000gn/T/exp-gemini-bfe00439-9a01-440f-9102-89e4d41dbcd3/terraform.tfstate",
+                "pattern": "aws_db_instance"
+              },
+              "output_preview": "",
+              "output_chars": 0,
+              "tokens_in_this_turn": 0,
+              "tokens_out_this_turn": 0,
+              "is_error": false
+            },
+            {
+              "name": "grep_search",
+              "input": {
+                "pattern": "engine",
+                "dir_path": "/var/folders/zh/yms1gjd96710vz87_cq258l40000gn/T/exp-gemini-bfe00439-9a01-440f-9102-89e4d41dbcd3/terraform.tfstate"
+              },
+              "output_preview": "",
+              "output_chars": 0,
+              "tokens_in_this_turn": 0,
+              "tokens_out_this_turn": 0,
+              "is_error": false
+            },
+            {
+              "name": "grep_search",
+              "input": {
+                "context": 10,
+                "pattern": "project42-prod-rds-primary",
+                "dir_path": "/var/folders/zh/yms1gjd96710vz87_cq258l40000gn/T/exp-gemini-bfe00439-9a01-440f-9102-89e4d41dbcd3/terraform.tfstate"
+              },
+              "output_preview": "",
+              "output_chars": 0,
+              "tokens_in_this_turn": 0,
+              "tokens_out_this_turn": 0,
+              "is_error": false
+            }
+          ],
+          "wall_time_ms": 43546,
+          "num_turns": 7,
+          "stop_reason": "success",
+          "files_accessed": [],
+          "terraform_commands": [
+            "get_schema --workingDir \"/var/folders/zh/yms1gjd96710vz87_cq258l40000gn/T/exp-gemini-bfe00439-9a01-440f-9102-89e4d41dbcd3\""
+          ],
+          "mcp_tools_used": [
+            "get_schema",
+            "terraform_state_list",
+            "grep_search",
+            "grep_search",
+            "grep_search"
+          ],
+          "total_tool_output_chars": 253
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "List all six modules in the infrastructure.",
+      "difficulty": "easy",
+      "category": "enumeration",
+      "scoring": {
+        "type": "set-overlap",
+        "ground_truth": {
+          "expected": [
+            "networking",
+            "security",
+            "compute",
+            "database",
+            "loadbalancer",
+            "monitoring"
+          ],
+          "order_matters": false
+        }
+      },
+      "trials": [
+        {
+          "trial": 1,
+          "answer": "The six modules in the infrastructure are:\n\n1. **compute**\n2. **database**\n3. **loadbalancer**\n4. **monitoring**\n5. **networking**\n6. **security**",
+          "tokens_in": 29373,
+          "tokens_out": 326,
+          "cost_usd": 0,
+          "tool_calls": 2,
+          "tool_call_details": [
+            {
+              "name": "mcp_terraform_terraform",
+              "input": {
+                "workingDir": "/var/folders/zh/yms1gjd96710vz87_cq258l40000gn/T/exp-gemini-f732a377-5147-44f1-b9ae-bc3ec5c3f7b6",
+                "type": "schema"
+              },
+              "output_preview": "# GraphQL SDL\n```graphql\n\n  scalar JSON\n\n  type Query {\n    resource(id: String!): Resource\n    resources(module: String, type: String, limit: Int): ResourceConnection!\n    module(name: String!): Module\n    modules: [Module!]!\n    path(fromId: String!, toId: String!, maxDepth: Int): PathResult\n    impact(resourceId: String!, depth: Int): ImpactResult!\n    deploymentOrder(module: String): [Resource!]!\n    summary: InfraSummary!\n  }\n\n  type Resource {\n    id: String!\n    shortName: String!\n    mod",
+              "output_chars": 3407,
+              "tokens_in_this_turn": 0,
+              "tokens_out_this_turn": 0,
+              "is_error": false
+            },
+            {
+              "name": "mcp_terraform_terraform",
+              "input": {
+                "workingDir": "/var/folders/zh/yms1gjd96710vz87_cq258l40000gn/T/exp-gemini-f732a377-5147-44f1-b9ae-bc3ec5c3f7b6",
+                "type": "query",
+                "query": "query InfraSummary {\n  summary {\n    moduleNames\n  }\n}\n"
+              },
+              "output_preview": "{\n  \"summary\": {\n    \"moduleNames\": [\n      \"compute\",\n      \"database\",\n      \"loadbalancer\",\n      \"monitoring\",\n      \"networking\",\n      \"security\"\n    ]\n  }\n}",
+              "output_chars": 163,
+              "tokens_in_this_turn": 0,
+              "tokens_out_this_turn": 0,
+              "is_error": false
+            }
+          ],
+          "wall_time_ms": 12109,
+          "num_turns": 2,
+          "stop_reason": "success",
+          "files_accessed": [],
+          "terraform_commands": [],
+          "mcp_tools_used": [
+            "mcp_terraform_terraform",
+            "mcp_terraform_terraform"
+          ],
+          "total_tool_output_chars": 3570
+        },
+        {
+          "trial": 2,
+          "answer": "[ERROR: Trial timed out after 180s]",
+          "tokens_in": 0,
+          "tokens_out": 0,
+          "cost_usd": 0,
+          "tool_calls": 0,
+          "tool_call_details": [],
+          "wall_time_ms": 0,
+          "num_turns": 0,
+          "stop_reason": "error",
+          "files_accessed": [],
+          "terraform_commands": [],
+          "mcp_tools_used": [],
+          "total_tool_output_chars": 0
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "List all subnets and their availability zones.",
+      "difficulty": "easy",
+      "category": "enumeration",
+      "scoring": {
+        "type": "set-overlap",
+        "ground_truth": {
+          "expected": [
+            "public_subnet_1 in us-east-1a",
+            "public_subnet_2 in us-east-1b",
+            "public_subnet_3 in us-east-1c",
+            "private_subnet_1 in us-east-1a",
+            "private_subnet_2 in us-east-1b",
+            "private_subnet_3 in us-east-1c",
+            "db_subnet_1 in us-east-1a",
+            "db_subnet_2 in us-east-1b"
+          ],
+          "order_matters": false
+        }
+      },
+      "trials": [
+        {
+          "trial": 1,
+          "answer": "The following subnets and their availability zones were identified in the `networking` module:\n\n| Subnet Name | Availability Zone | CIDR Block | Type |\n| :--- | :--- | :--- | :--- |\n| `public_subnet_1` | **us-east-1a** | `10.0.1.0/24` | Public |\n| `public_subnet_2` | **us-east-1b** | `10.0.2.0/24` | Public |\n| `public_subnet_3` | **us-east-1c** | `10.0.3.0/24` | Public |\n| `private_subnet_1` | **us-east-1a** | `10.0.11.0/24` | Private |\n| `private_subnet_2` | **us-east-1b** | `10.0.12.0/24` | Private |\n| `private_subnet_3` | **us-east-1c** | `10.0.13.0/24` | Private |\n| `db_subnet_1` | **us-east-1a** | `10.0.21.0/24` | Database |\n| `db_subnet_2` | **us-east-1b** | `10.0.22.0/24` | Database |",
+          "tokens_in": 38709,
+          "tokens_out": 647,
+          "cost_usd": 0,
+          "tool_calls": 2,
+          "tool_call_details": [
+            {
+              "name": "mcp_terraform_terraform",
+              "input": {
+                "workingDir": "/var/folders/zh/yms1gjd96710vz87_cq258l40000gn/T/exp-gemini-cd68cea5-6c8b-4412-8d19-2b085cb3639a",
+                "type": "schema"
+              },
+              "output_preview": "# GraphQL SDL\n```graphql\n\n  scalar JSON\n\n  type Query {\n    resource(id: String!): Resource\n    resources(module: String, type: String, limit: Int): ResourceConnection!\n    module(name: String!): Module\n    modules: [Module!]!\n    path(fromId: String!, toId: String!, maxDepth: Int): PathResult\n    impact(resourceId: String!, depth: Int): ImpactResult!\n    deploymentOrder(module: String): [Resource!]!\n    summary: InfraSummary!\n  }\n\n  type Resource {\n    id: String!\n    shortName: String!\n    mod",
+              "output_chars": 3407,
+              "tokens_in_this_turn": 0,
+              "tokens_out_this_turn": 0,
+              "is_error": false
+            },
+            {
+              "name": "mcp_terraform_terraform",
+              "input": {
+                "query": "query GetNetworkingResources {\n  module(name: \"networking\") {\n    resources {\n      id\n      shortName\n      resourceType\n      attributes\n    }\n  }\n}",
+                "workingDir": "/var/folders/zh/yms1gjd96710vz87_cq258l40000gn/T/exp-gemini-cd68cea5-6c8b-4412-8d19-2b085cb3639a",
+                "type": "query"
+              },
+              "output_preview": "{\n  \"module\": {\n    \"resources\": [\n      {\n        \"id\": \"module.networking.null_resource.db_subnet_1\",\n        \"shortName\": \"db_subnet_1\",\n        \"resourceType\": \"null_resource\",\n        \"attributes\": {\n          \"id\": \"5036166804138879865\",\n          \"triggers\": {\n            \"approved_by\": \"platform-team@project42.example.com\",\n            \"arn\": \"arn:aws:ec2:us-east-1:123456789012:subnet/subnet-db-0a1b2c3d4e5f0001\",\n            \"assign_ipv6_on_creation\": \"false\",\n            \"availability_z",
+              "output_chars": 26361,
+              "tokens_in_this_turn": 0,
+              "tokens_out_this_turn": 0,
+              "is_error": false
+            }
+          ],
+          "wall_time_ms": 11363,
+          "num_turns": 6,
+          "stop_reason": "success",
+          "files_accessed": [],
+          "terraform_commands": [],
+          "mcp_tools_used": [
+            "mcp_terraform_terraform",
+            "mcp_terraform_terraform"
+          ],
+          "total_tool_output_chars": 29768
+        },
+        {
+          "trial": 2,
+          "answer": "[ERROR: Trial timed out after 180s]",
+          "tokens_in": 0,
+          "tokens_out": 0,
+          "cost_usd": 0,
+          "tool_calls": 0,
+          "tool_call_details": [],
+          "wall_time_ms": 0,
+          "num_turns": 0,
+          "stop_reason": "error",
+          "files_accessed": [],
+          "terraform_commands": [],
+          "mcp_tools_used": [],
+          "total_tool_output_chars": 0
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "How many resources are there in total? Break down the count by module.",
+      "difficulty": "easy",
+      "category": "inventory",
+      "scoring": {
+        "type": "checklist",
+        "ground_truth": {
+          "items": [
+            "75 total",
+            "networking: 15",
+            "security: 14",
+            "compute: 16",
+            "database: 10",
+            "loadbalancer: 10",
+            "monitoring: 10"
+          ],
+          "min_for_full": 7,
+          "min_for_partial": 4
+        }
+      },
+      "trials": [
+        {
+          "trial": 1,
+          "answer": "There are a total of **75** resources in the state. Here is the breakdown by module:\n\n| Module | Resource Count |\n| :--- | :--- |\n| **compute** | 16 |\n| **networking** | 15 |\n| **security** | 14 |\n| **database** | 10 |\n| **loadbalancer** | 10 |\n| **monitoring** | 10 |\n| **Total** | **75** |",
+          "tokens_in": 29498,
+          "tokens_out": 436,
+          "cost_usd": 0,
+          "tool_calls": 2,
+          "tool_call_details": [
+            {
+              "name": "mcp_terraform_terraform",
+              "input": {
+                "type": "schema",
+                "workingDir": "/var/folders/zh/yms1gjd96710vz87_cq258l40000gn/T/exp-gemini-c7de12e7-1f4f-462c-8cc1-29eff0ae4135"
+              },
+              "output_preview": "# GraphQL SDL\n```graphql\n\n  scalar JSON\n\n  type Query {\n    resource(id: String!): Resource\n    resources(module: String, type: String, limit: Int): ResourceConnection!\n    module(name: String!): Module\n    modules: [Module!]!\n    path(fromId: String!, toId: String!, maxDepth: Int): PathResult\n    impact(resourceId: String!, depth: Int): ImpactResult!\n    deploymentOrder(module: String): [Resource!]!\n    summary: InfraSummary!\n  }\n\n  type Resource {\n    id: String!\n    shortName: String!\n    mod",
+              "output_chars": 3407,
+              "tokens_in_this_turn": 0,
+              "tokens_out_this_turn": 0,
+              "is_error": false
+            },
+            {
+              "name": "mcp_terraform_terraform",
+              "input": {
+                "type": "query",
+                "workingDir": "/var/folders/zh/yms1gjd96710vz87_cq258l40000gn/T/exp-gemini-c7de12e7-1f4f-462c-8cc1-29eff0ae4135",
+                "query": "\nquery {\n  summary {\n    totalResources\n  }\n  modules {\n    name\n    resourceCount\n  }\n}\n"
+              },
+              "output_preview": "{\n  \"summary\": {\n    \"totalResources\": 75\n  },\n  \"modules\": [\n    {\n      \"name\": \"compute\",\n      \"resourceCount\": 16\n    },\n    {\n      \"name\": \"database\",\n      \"resourceCount\": 10\n    },\n    {\n      \"name\": \"loadbalancer\",\n      \"resourceCount\": 10\n    },\n    {\n      \"name\": \"monitoring\",\n      \"resourceCount\": 10\n    },\n    {\n      \"name\": \"networking\",\n      \"resourceCount\": 15\n    },\n    {\n      \"name\": \"security\",\n      \"resourceCount\": 14\n    }\n  ]\n}",
+              "output_chars": 463,
+              "tokens_in_this_turn": 0,
+              "tokens_out_this_turn": 0,
+              "is_error": false
+            }
+          ],
+          "wall_time_ms": 11794,
+          "num_turns": 3,
+          "stop_reason": "success",
+          "files_accessed": [],
+          "terraform_commands": [],
+          "mcp_tools_used": [
+            "mcp_terraform_terraform",
+            "mcp_terraform_terraform"
+          ],
+          "total_tool_output_chars": 3870
+        },
+        {
+          "trial": 2,
+          "answer": "[ERROR: Trial timed out after 180s]",
+          "tokens_in": 0,
+          "tokens_out": 0,
+          "cost_usd": 0,
+          "tool_calls": 0,
+          "tool_call_details": [],
+          "wall_time_ms": 0,
+          "num_turns": 0,
+          "stop_reason": "error",
+          "files_accessed": [],
+          "terraform_commands": [],
+          "mcp_tools_used": [],
+          "total_tool_output_chars": 0
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "What are the names of all four security groups?",
+      "difficulty": "easy",
+      "category": "enumeration",
+      "scoring": {
+        "type": "set-overlap",
+        "ground_truth": {
+          "expected": [
+            "sg_alb",
+            "sg_web",
+            "sg_app",
+            "sg_db"
+          ],
+          "order_matters": false
+        }
+      },
+      "trials": [
+        {
+          "trial": 1,
+          "answer": "The four security groups, identified by their resource names in the `security` module, are:\n\n1. **sg_alb**\n2. **sg_app**\n3. **sg_db**\n4. **sg_web**",
+          "tokens_in": 30389,
+          "tokens_out": 415,
+          "cost_usd": 0,
+          "tool_calls": 2,
+          "tool_call_details": [
+            {
+              "name": "mcp_terraform_terraform",
+              "input": {
+                "workingDir": "/var/folders/zh/yms1gjd96710vz87_cq258l40000gn/T/exp-gemini-500a7d9e-6ea7-445b-9297-d3ed401fae67",
+                "type": "schema"
+              },
+              "output_preview": "# GraphQL SDL\n```graphql\n\n  scalar JSON\n\n  type Query {\n    resource(id: String!): Resource\n    resources(module: String, type: String, limit: Int): ResourceConnection!\n    module(name: String!): Module\n    modules: [Module!]!\n    path(fromId: String!, toId: String!, maxDepth: Int): PathResult\n    impact(resourceId: String!, depth: Int): ImpactResult!\n    deploymentOrder(module: String): [Resource!]!\n    summary: InfraSummary!\n  }\n\n  type Resource {\n    id: String!\n    shortName: String!\n    mod",
+              "output_chars": 3407,
+              "tokens_in_this_turn": 0,
+              "tokens_out_this_turn": 0,
+              "is_error": false
+            },
+            {
+              "name": "mcp_terraform_terraform",
+              "input": {
+                "query": "\nquery SecurityModuleResources {\n  module(name: \"security\") {\n    name\n    resourceCount\n    resources {\n      id\n      shortName\n      resourceType\n      summary {\n        name\n      }\n    }\n  }\n}\n",
+                "workingDir": "/var/folders/zh/yms1gjd96710vz87_cq258l40000gn/T/exp-gemini-500a7d9e-6ea7-445b-9297-d3ed401fae67",
+                "type": "query"
+              },
+              "output_preview": "{\n  \"module\": {\n    \"name\": \"security\",\n    \"resourceCount\": 14,\n    \"resources\": [\n      {\n        \"id\": \"module.security.null_resource.iam_policy_app\",\n        \"shortName\": \"iam_policy_app\",\n        \"resourceType\": \"null_resource\",\n        \"summary\": {\n          \"name\": \"iam_policy_app\"\n        }\n      },\n      {\n        \"id\": \"module.security.null_resource.iam_policy_db\",\n        \"shortName\": \"iam_policy_db\",\n        \"resourceType\": \"null_resource\",\n        \"summary\": {\n          \"name\": \"iam",
+              "output_chars": 3082,
+              "tokens_in_this_turn": 0,
+              "tokens_out_this_turn": 0,
+              "is_error": false
+            }
+          ],
+          "wall_time_ms": 12726,
+          "num_turns": 3,
+          "stop_reason": "success",
+          "files_accessed": [],
+          "terraform_commands": [],
+          "mcp_tools_used": [
+            "mcp_terraform_terraform",
+            "mcp_terraform_terraform"
+          ],
+          "total_tool_output_chars": 6489
+        },
+        {
+          "trial": 2,
+          "answer": "The four security groups in the project, which are mocked using `null_resource` blocks in `modules/security/main.tf`, are named using the `project_name` variable (`project42-prod`) combined with their respective architectural tiers:\n\n1. **project42-prod-sg-alb** (Load Balancer tier)\n2. **project42-prod-sg-web** (Web tier)\n3. **project42-prod-sg-app** (Application tier)\n4. **project42-prod-sg-db** (Database tier)",
+          "tokens_in": 511013,
+          "tokens_out": 2892,
+          "cost_usd": 0,
+          "tool_calls": 7,
+          "tool_call_details": [
+            {
+              "name": "run_shell_command",
+              "input": {
+                "description": "Get the GraphQL schema for the Terraform project.",
+                "command": "mcp-terraform get_schema --workingDir \"/var/folders/zh/yms1gjd96710vz87_cq258l40000gn/T/exp-gemini-500a7d9e-6ea7-445b-9297-d3ed401fae67\""
+              },
+              "output_preview": "/bin/bash: line 1: mcp-terraform: command not found",
+              "output_chars": 51,
+              "tokens_in_this_turn": 0,
+              "tokens_out_this_turn": 0,
+              "is_error": false
+            },
+            {
+              "name": "terraform_state_list",
+              "input": {
+                "workingDir": "/var/folders/zh/yms1gjd96710vz87_cq258l40000gn/T/exp-gemini-500a7d9e-6ea7-445b-9297-d3ed401fae67"
+              },
+              "output_preview": "Tool \"terraform_state_list\" not found. Did you mean one of: \"generalist\", \"write_file\", \"enter_plan_mode\"?",
+              "output_chars": 106,
+              "tokens_in_this_turn": 0,
+              "tokens_out_this_turn": 0,
+              "is_error": true
+            },
+            {
+              "name": "list_directory",
+              "input": {
+                "dir_path": "/var/folders/zh/yms1gjd96710vz87_cq258l40000gn/T/exp-gemini-500a7d9e-6ea7-445b-9297-d3ed401fae67"
+              },
+              "output_preview": "",
+              "output_chars": 0,
+              "tokens_in_this_turn": 0,
+              "tokens_out_this_turn": 0,
+              "is_error": false
+            },
+            {
+              "name": "cli_help",
+              "input": {
+                "question": "How do I access the terraform MCP tools like get_schema or query_graph in this session? They are not in my tool declaration list but the prompt says I should use them."
+              },
+              "output_preview": "",
+              "output_chars": 0,
+              "tokens_in_this_turn": 0,
+              "tokens_out_this_turn": 0,
+              "is_error": false
+            },
+            {
+              "name": "run_shell_command",
+              "input": {
+                "command": "ls /usr/local/bin | grep mcp",
+                "description": "Check for MCP binaries in /usr/local/bin."
+              },
+              "output_preview": "Command exited with code: 1",
+              "output_chars": 27,
+              "tokens_in_this_turn": 0,
+              "tokens_out_this_turn": 0,
+              "is_error": false
+            },
+            {
+              "name": "get_schema",
+              "input": {
+                "workingDir": "/var/folders/zh/yms1gjd96710vz87_cq258l40000gn/T/exp-gemini-500a7d9e-6ea7-445b-9297-d3ed401fae67"
+              },
+              "output_preview": "Tool \"get_schema\" not found. Did you mean one of: \"grep_search\", \"replace\", \"cli_help\"?",
+              "output_chars": 87,
+              "tokens_in_this_turn": 0,
+              "tokens_out_this_turn": 0,
+              "is_error": true
+            },
+            {
+              "name": "codebase_investigator",
+              "input": {
+                "objective": "Find the names of all four security groups in the terraform project at /var/folders/zh/yms1gjd96710vz87_cq258l40000gn/T/exp-gemini-500a7d9e-6ea7-445b-9297-d3ed401fae67. Search for 'aws_security_group' resources and extract their names."
+              },
+              "output_preview": "",
+              "output_chars": 0,
+              "tokens_in_this_turn": 0,
+              "tokens_out_this_turn": 0,
+              "is_error": false
+            }
+          ],
+          "wall_time_ms": 130797,
+          "num_turns": 6,
+          "stop_reason": "success",
+          "files_accessed": [],
+          "terraform_commands": [
+            "get_schema --workingDir \"/var/folders/zh/yms1gjd96710vz87_cq258l40000gn/T/exp-gemini-500a7d9e-6ea7-445b-9297-d3ed401fae67\""
+          ],
+          "mcp_tools_used": [
+            "terraform_state_list",
+            "cli_help",
+            "get_schema",
+            "codebase_investigator"
+          ],
+          "total_tool_output_chars": 271
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "prompt": "What is the Redis cache engine version and node type?",
+      "difficulty": "easy",
+      "category": "attribute-lookup",
+      "scoring": {
+        "type": "substring-match",
+        "ground_truth": {
+          "substrings": [
+            "7.0",
+            "cache.r6g.large"
+          ]
+        }
+      },
+      "trials": [
+        {
+          "trial": 1,
+          "answer": "The Redis cache (`module.database.null_resource.elasticache_cluster`) is configured with the following settings:\n\n*   **Engine Version:** 7.0 (Actual: 7.0.7)\n*   **Node Type:** `cache.r6g.large`",
+          "tokens_in": 51391,
+          "tokens_out": 724,
+          "cost_usd": 0,
+          "tool_calls": 4,
+          "tool_call_details": [
+            {
+              "name": "mcp_terraform_terraform",
+              "input": {
+                "type": "schema",
+                "workingDir": "/var/folders/zh/yms1gjd96710vz87_cq258l40000gn/T/exp-gemini-f300d053-c464-4523-8f79-195943d2eda0"
+              },
+              "output_preview": "# GraphQL SDL\n```graphql\n\n  scalar JSON\n\n  type Query {\n    resource(id: String!): Resource\n    resources(module: String, type: String, limit: Int): ResourceConnection!\n    module(name: String!): Module\n    modules: [Module!]!\n    path(fromId: String!, toId: String!, maxDepth: Int): PathResult\n    impact(resourceId: String!, depth: Int): ImpactResult!\n    deploymentOrder(module: String): [Resource!]!\n    summary: InfraSummary!\n  }\n\n  type Resource {\n    id: String!\n    shortName: String!\n    mod",
+              "output_chars": 3407,
+              "tokens_in_this_turn": 0,
+              "tokens_out_this_turn": 0,
+              "is_error": false
+            },
+            {
+              "name": "mcp_terraform_terraform",
+              "input": {
+                "workingDir": "/var/folders/zh/yms1gjd96710vz87_cq258l40000gn/T/exp-gemini-f300d053-c464-4523-8f79-195943d2eda0",
+                "type": "query",
+                "query": "query InfraSummary {\n  summary {\n    totalResources\n    totalModules\n    moduleNames\n    typeBreakdown { resourceType count }\n  }\n}"
+              },
+              "output_preview": "{\n  \"summary\": {\n    \"totalResources\": 75,\n    \"totalModules\": 6,\n    \"moduleNames\": [\n      \"compute\",\n      \"database\",\n      \"loadbalancer\",\n      \"monitoring\",\n      \"networking\",\n      \"security\"\n    ],\n    \"typeBreakdown\": [\n      {\n        \"resourceType\": \"null_resource\",\n        \"count\": 75\n      }\n    ]\n  }\n}",
+              "output_chars": 319,
+              "tokens_in_this_turn": 0,
+              "tokens_out_this_turn": 0,
+              "is_error": false
+            },
+            {
+              "name": "mcp_terraform_terraform",
+              "input": {
+                "query": "query DatabaseResources {\n  module(name: \"database\") {\n    resources { id shortName resourceType }\n  }\n}",
+                "workingDir": "/var/folders/zh/yms1gjd96710vz87_cq258l40000gn/T/exp-gemini-f300d053-c464-4523-8f79-195943d2eda0",
+                "type": "query"
+              },
+              "output_preview": "{\n  \"module\": {\n    \"resources\": [\n      {\n        \"id\": \"module.database.null_resource.db_option_group\",\n        \"shortName\": \"db_option_group\",\n        \"resourceType\": \"null_resource\"\n      },\n      {\n        \"id\": \"module.database.null_resource.db_parameter_group\",\n        \"shortName\": \"db_parameter_group\",\n        \"resourceType\": \"null_resource\"\n      },\n      {\n        \"id\": \"module.database.null_resource.db_subnet_group\",\n        \"shortName\": \"db_subnet_group\",\n        \"resourceType\": \"nul",
+              "output_chars": 1715,
+              "tokens_in_this_turn": 0,
+              "tokens_out_this_turn": 0,
+              "is_error": false
+            },
+            {
+              "name": "mcp_terraform_terraform",
+              "input": {
+                "query": "query ElastiCacheAttributes {\n  resource(id: \"module.database.null_resource.elasticache_cluster\") {\n    id\n    attributes\n  }\n}",
+                "type": "query",
+                "workingDir": "/var/folders/zh/yms1gjd96710vz87_cq258l40000gn/T/exp-gemini-f300d053-c464-4523-8f79-195943d2eda0"
+              },
+              "output_preview": "{\n  \"resource\": {\n    \"id\": \"module.database.null_resource.elasticache_cluster\",\n    \"attributes\": {\n      \"id\": \"1572724254987849815\",\n      \"triggers\": {\n        \"approved_by\": \"platform-team@project42.example.com\",\n        \"arn\": \"arn:aws:elasticache:us-east-1:123456789012:cluster:project42-prod-redis-cluster\",\n        \"at_rest_encryption\": \"true\",\n        \"auth_token_enabled\": \"true\",\n        \"auto_minor_version_upgrade\": \"true\",\n        \"aws_account_id\": \"123456789012\",\n        \"aws_region\"",
+              "output_chars": 2158,
+              "tokens_in_this_turn": 0,
+              "tokens_out_this_turn": 0,
+              "is_error": false
+            }
+          ],
+          "wall_time_ms": 15095,
+          "num_turns": 5,
+          "stop_reason": "success",
+          "files_accessed": [],
+          "terraform_commands": [],
+          "mcp_tools_used": [
+            "mcp_terraform_terraform",
+            "mcp_terraform_terraform",
+            "mcp_terraform_terraform",
+            "mcp_terraform_terraform"
+          ],
+          "total_tool_output_chars": 7599
+        },
+        {
+          "trial": 2,
+          "answer": "Based on the resource definitions in `modules/database/main.tf`, the Redis cache (represented by the `elasticache_cluster` resource) has the following configuration:\n\n- **Engine Version:** 7.0 (Actual version: 7.0.7)\n- **Node Type:** cache.r6g.large",
+          "tokens_in": 43338,
+          "tokens_out": 503,
+          "cost_usd": 0,
+          "tool_calls": 4,
+          "tool_call_details": [
+            {
+              "name": "run_shell_command",
+              "input": {
+                "description": "Listing files to confirm project structure.",
+                "command": "ls -R /var/folders/zh/yms1gjd96710vz87_cq258l40000gn/T/exp-gemini-f300d053-c464-4523-8f79-195943d2eda0"
+              },
+              "output_preview": "main.tf                 providers.tf            variables.tf\nmodules                 terraform.tfstate\noutputs.tf              terraform.tfvars\n\n/var/folders/zh/yms1gjd96710vz87_cq258l40000gn/T/exp-gemini-f300d053-c464-4523-8f79-195943d2eda0/modules:\ncompute         loadbalancer    networking\ndatabase        monitoring      security\n\n/var/folders/zh/yms1gjd96710vz87_cq258l40000gn/T/exp-gemini-f300d053-c464-4523-8f79-195943d2eda0/modules/compute:\nmain.tf         outputs.tf      variables.tf\n\n/var",
+              "output_chars": 1307,
+              "tokens_in_this_turn": 0,
+              "tokens_out_this_turn": 0,
+              "is_error": false
+            },
+            {
+              "name": "run_shell_command",
+              "input": {
+                "description": "Attempting to use get_schema as a CLI command since it's listed as an MCP tool but not in my direct tool definitions.",
+                "command": "get_schema --workingDir \"/var/folders/zh/yms1gjd96710vz87_cq258l40000gn/T/exp-gemini-f300d053-c464-4523-8f79-195943d2eda0\""
+              },
+              "output_preview": "/bin/bash: line 1: get_schema: command not found",
+              "output_chars": 48,
+              "tokens_in_this_turn": 0,
+              "tokens_out_this_turn": 0,
+              "is_error": false
+            },
+            {
+              "name": "grep_search",
+              "input": {
+                "include_pattern": "**/*.tf",
+                "pattern": "redis"
+              },
+              "output_preview": "",
+              "output_chars": 0,
+              "tokens_in_this_turn": 0,
+              "tokens_out_this_turn": 0,
+              "is_error": false
+            },
+            {
+              "name": "read_file",
+              "input": {
+                "start_line": 250,
+                "file_path": "modules/database/main.tf",
+                "end_line": 280
+              },
+              "output_preview": "Read lines 250-280 of 363 from modules/database/main.tf",
+              "output_chars": 55,
+              "tokens_in_this_turn": 0,
+              "tokens_out_this_turn": 0,
+              "is_error": false
+            }
+          ],
+          "wall_time_ms": 31414,
+          "num_turns": 4,
+          "stop_reason": "success",
+          "files_accessed": [
+            "modules/database/main.tf"
+          ],
+          "terraform_commands": [],
+          "mcp_tools_used": [
+            "grep_search"
+          ],
+          "total_tool_output_chars": 1410
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "prompt": "What resources directly depend on the VPC?",
+      "difficulty": "medium",
+      "category": "dependency-direct",
+      "scoring": {
+        "type": "set-overlap",
+        "ground_truth": {
+          "expected": [
+            "public_subnet_1",
+            "public_subnet_2",
+            "public_subnet_3",
+            "private_subnet_1",
+            "private_subnet_2",
+            "private_subnet_3",
+            "db_subnet_1",
+            "db_subnet_2",
+            "internet_gateway",
+            "route_table_public",
+            "route_table_private",
+            "route_table_db"
+          ],
+          "order_matters": false
+        }
+      },
+      "trials": [
+        {
+          "trial": 1,
+          "answer": "The following resources directly depend on the VPC (`module.networking.null_resource.vpc`):\n\n### **Networking Module**\n*   **Subnets:** `public_subnet_1`, `public_subnet_2`, `public_subnet_3`, `private_subnet_1`, `private_subnet_2`, `private_subnet_3`, `db_subnet_1`, `db_subnet_2`\n*   **Gateways:** `internet_gateway`, `nat_gateway`\n*   **Route Tables:** `route_table_public`, `route_table_private`, `route_table_db`\n\n### **Compute Module**\n*   **Instances:** `web_instance_1`, `web_instance_2`, `app_instance_1`, `app_instance_2`, `bastion`\n*   **Auto Scaling:** `asg_web`, `asg_app`, `launch_template_web`, `launch_template_app`, `scaling_policy_web`, `scaling_policy_app`\n*   **Alarms:** `cw_alarm_asg_web`, `cw_alarm_asg_app`\n\n### **Security Module**\n*   **Security Groups:** `sg_web`, `sg_app`, `sg_db`, `sg_alb`\n*   **Security Group Rules:** `sg_rule_web`, `sg_rule_app`, `sg_rule_db`, `sg_rule_alb`\n\n### **Database Module**\n*   **RDS/Cache:** `rds_primary`, `rds_replica`, `elasticache_cluster`\n*   **Subnet Groups:** `db_subnet_group`, `elasticache_subnet_group`\n*   **Other:** `secrets_manager_version`\n\n### **Load Balancer Module**\n*   **LB Components:** `alb`, `target_group_web`, `target_group_app`, `listener_http`, `listener_https`, `listener_rule_web`, `listener_rule_app`\n*   **WAF & DNS:** `waf_web_acl`, `route53_record`\n\n### **Monitoring Module**\n*   **Alarms & Dashboards:** `cw_alarm_cpu`, `cw_alarm_memory`, `cw_alarm_5xx`, `cw_dashboard`",
+          "tokens_in": 33359,
+          "tokens_out": 877,
+          "cost_usd": 0,
+          "tool_calls": 2,
+          "tool_call_details": [
+            {
+              "name": "mcp_terraform_terraform",
+              "input": {
+                "type": "schema",
+                "workingDir": "/var/folders/zh/yms1gjd96710vz87_cq258l40000gn/T/exp-gemini-3ddf6025-3741-4c3f-9942-41b4461f6b51"
+              },
+              "output_preview": "# GraphQL SDL\n```graphql\n\n  scalar JSON\n\n  type Query {\n    resource(id: String!): Resource\n    resources(module: String, type: String, limit: Int): ResourceConnection!\n    module(name: String!): Module\n    modules: [Module!]!\n    path(fromId: String!, toId: String!, maxDepth: Int): PathResult\n    impact(resourceId: String!, depth: Int): ImpactResult!\n    deploymentOrder(module: String): [Resource!]!\n    summary: InfraSummary!\n  }\n\n  type Resource {\n    id: String!\n    shortName: String!\n    mod",
+              "output_chars": 3407,
+              "tokens_in_this_turn": 0,
+              "tokens_out_this_turn": 0,
+              "is_error": false
+            },
+            {
+              "name": "mcp_terraform_terraform",
+              "input": {
+                "type": "query",
+                "query": "query VpcDirectDependents {\n  resource(id: \"module.networking.null_resource.vpc\") {\n    dependents(depth: 1) {\n      resource {\n        id\n        shortName\n        module\n        resourceType\n      }\n      depth\n    }\n  }\n}",
+                "workingDir": "/var/folders/zh/yms1gjd96710vz87_cq258l40000gn/T/exp-gemini-3ddf6025-3741-4c3f-9942-41b4461f6b51"
+              },
+              "output_preview": "{\n  \"resource\": {\n    \"dependents\": [\n      {\n        \"resource\": {\n          \"id\": \"module.compute.null_resource.app_instance_1\",\n          \"shortName\": \"app_instance_1\",\n          \"module\": \"compute\",\n          \"resourceType\": \"null_resource\"\n        },\n        \"depth\": 1\n      },\n      {\n        \"resource\": {\n          \"id\": \"module.compute.null_resource.app_instance_2\",\n          \"shortName\": \"app_instance_2\",\n          \"module\": \"compute\",\n          \"resourceType\": \"null_resource\"\n        }",
+              "output_chars": 13256,
+              "tokens_in_this_turn": 0,
+              "tokens_out_this_turn": 0,
+              "is_error": false
+            }
+          ],
+          "wall_time_ms": 11993,
+          "num_turns": 7,
+          "stop_reason": "success",
+          "files_accessed": [],
+          "terraform_commands": [],
+          "mcp_tools_used": [
+            "mcp_terraform_terraform",
+            "mcp_terraform_terraform"
+          ],
+          "total_tool_output_chars": 16663
+        },
+        {
+          "trial": 2,
+          "answer": "I will start by retrieving the Terraform schema to understand the available prebuilt queries and GraphQL structure.\n\nI will attempt to call the `get_schema` tool to discover the available GraphQL schema for the Terraform project.\n\nI will try to call `terraform_state_list` to see if any of the requested MCP tools are available under their direct names.\n\nI will call the `cli_help` agent to see if there is any information on how to use MCP tools in this environment.\n\nI will try calling `mcp_terraform_get_schema` to see if the MCP tools are prefixed with `mcp_terraform_` as suggested by the `cli_help` agent.\n\nI will try running `mcp list` in the shell to see if I can list the available MCP tools.\n\nI will try calling `terraform_graph` to see if it is available as a tool.\n\nI will call `list_directory` to see the contents of the workspace.\n\nI will try running `mcp-terraform` in the shell to see if it is available as a command.\n\nI will try calling `query_graph` directly to see if it is available as a tool.\n\nI will try running `terraform` in the shell to see if it is available and if I can use it to find the VPC dependencies.\n\nI will use the `generalist` agent to see if it can call the `get_schema` tool, as it might have access to additional MCP tools.\n\n",
+          "tokens_in": 302053,
+          "tokens_out": 2416,
+          "cost_usd": 0,
+          "tool_calls": 12,
+          "tool_call_details": [
+            {
+              "name": "run_shell_command",
+              "input": {
+                "description": "Retrieve the Terraform MCP schema to discover available queries.",
+                "command": "mcp-terraform-server get_schema --workingDir \"/var/folders/zh/yms1gjd96710vz87_cq258l40000gn/T/exp-gemini-3ddf6025-3741-4c3f-9942-41b4461f6b51\""
+              },
+              "output_preview": "/bin/bash: line 1: mcp-terraform-server: command not found",
+              "output_chars": 58,
+              "tokens_in_this_turn": 0,
+              "tokens_out_this_turn": 0,
+              "is_error": false
+            },
+            {
+              "name": "get_schema",
+              "input": {
+                "workingDir": "/var/folders/zh/yms1gjd96710vz87_cq258l40000gn/T/exp-gemini-3ddf6025-3741-4c3f-9942-41b4461f6b51"
+              },
+              "output_preview": "Tool \"get_schema\" not found. Did you mean one of: \"grep_search\", \"replace\", \"cli_help\"?",
+              "output_chars": 87,
+              "tokens_in_this_turn": 0,
+              "tokens_out_this_turn": 0,
+              "is_error": true
+            },
+            {
+              "name": "terraform_state_list",
+              "input": {
+                "workingDir": "/var/folders/zh/yms1gjd96710vz87_cq258l40000gn/T/exp-gemini-3ddf6025-3741-4c3f-9942-41b4461f6b51"
+              },
+              "output_preview": "Tool \"terraform_state_list\" not found. Did you mean one of: \"generalist\", \"write_file\", \"enter_plan_mode\"?",
+              "output_chars": 106,
+              "tokens_in_this_turn": 0,
+              "tokens_out_this_turn": 0,
+              "is_error": true
+            },
+            {
+              "name": "cli_help",
+              "input": {
+                "question": "How do I use MCP tools from a connected terraform MCP server? I'm trying to use `get_schema` and `query_graph` but they are not in my tool list."
+              },
+              "output_preview": "",
+              "output_chars": 0,
+              "tokens_in_this_turn": 0,
+              "tokens_out_this_turn": 0,
+              "is_error": false
+            },
+            {
+              "name": "mcp_terraform_get_schema",
+              "input": {
+                "workingDir": "/var/folders/zh/yms1gjd96710vz87_cq258l40000gn/T/exp-gemini-3ddf6025-3741-4c3f-9942-41b4461f6b51"
+              },
+              "output_preview": "Tool \"mcp_terraform_get_schema\" not found. Did you mean one of: \"grep_search\", \"web_fetch\", \"activate_skill\"?",
+              "output_chars": 109,
+              "tokens_in_this_turn": 0,
+              "tokens_out_this_turn": 0,
+              "is_error": true
+            },
+            {
+              "name": "run_shell_command",
+              "input": {
+                "command": "mcp list",
+                "description": "List available MCP tools using the 'mcp' command."
+              },
+              "output_preview": "/bin/bash: line 1: mcp: command not found",
+              "output_chars": 41,
+              "tokens_in_this_turn": 0,
+              "tokens_out_this_turn": 0,
+              "is_error": false
+            },
+            {
+              "name": "terraform_graph",
+              "input": {
+                "workingDir": "/var/folders/zh/yms1gjd96710vz87_cq258l40000gn/T/exp-gemini-3ddf6025-3741-4c3f-9942-41b4461f6b51"
+              },
+              "output_preview": "Tool \"terraform_graph\" not found. Did you mean one of: \"read_file\", \"grep_search\", \"web_fetch\"?",
+              "output_chars": 95,
+              "tokens_in_this_turn": 0,
+              "tokens_out_this_turn": 0,
+              "is_error": true
+            },
+            {
+              "name": "list_directory",
+              "input": {
+                "dir_path": "/var/folders/zh/yms1gjd96710vz87_cq258l40000gn/T/exp-gemini-3ddf6025-3741-4c3f-9942-41b4461f6b51"
+              },
+              "output_preview": "",
+              "output_chars": 0,
+              "tokens_in_this_turn": 0,
+              "tokens_out_this_turn": 0,
+              "is_error": false
+            },
+            {
+              "name": "run_shell_command",
+              "input": {
+                "command": "mcp-terraform --help",
+                "description": "Try running 'mcp-terraform' in the shell."
+              },
+              "output_preview": "/bin/bash: line 1: mcp-terraform: command not found",
+              "output_chars": 51,
+              "tokens_in_this_turn": 0,
+              "tokens_out_this_turn": 0,
+              "is_error": false
+            },
+            {
+              "name": "query_graph",
+              "input": {
+                "query": "{ resources { address } }",
+                "workingDir": "/var/folders/zh/yms1gjd96710vz87_cq258l40000gn/T/exp-gemini-3ddf6025-3741-4c3f-9942-41b4461f6b51"
+              },
+              "output_preview": "Tool \"query_graph\" not found. Did you mean one of: \"grep_search\", \"web_fetch\", \"read_file\"?",
+              "output_chars": 91,
+              "tokens_in_this_turn": 0,
+              "tokens_out_this_turn": 0,
+              "is_error": true
+            },
+            {
+              "name": "run_shell_command",
+              "input": {
+                "command": "terraform state list",
+                "dir_path": "/var/folders/zh/yms1gjd96710vz87_cq258l40000gn/T/exp-gemini-3ddf6025-3741-4c3f-9942-41b4461f6b51"
+              },
+              "output_preview": "module.compute.null_resource.app_instance_1\nmodule.compute.null_resource.app_instance_2\nmodule.compute.null_resource.asg_app\nmodule.compute.null_resource.asg_web\nmodule.compute.null_resource.bastion\nmodule.compute.null_resource.cw_alarm_asg_app\nmodule.compute.null_resource.cw_alarm_asg_web\nmodule.compute.null_resource.instance_profile_app\nmodule.compute.null_resource.instance_profile_web\nmodule.compute.null_resource.key_pair\nmodule.compute.null_resource.launch_template_app\nmodule.compute.null_re",
+              "output_chars": 3443,
+              "tokens_in_this_turn": 0,
+              "tokens_out_this_turn": 0,
+              "is_error": false
+            },
+            {
+              "name": "generalist",
+              "input": {
+                "request": "Use the `get_schema` tool with `workingDir: \"/var/folders/zh/yms1gjd96710vz87_cq258l40000gn/T/exp-gemini-3ddf6025-3741-4c3f-9942-41b4461f6b51\"` to list available queries."
+              },
+              "output_preview": "",
+              "output_chars": 0,
+              "tokens_in_this_turn": 0,
+              "tokens_out_this_turn": 0,
+              "is_error": false
+            }
+          ],
+          "wall_time_ms": 0,
+          "num_turns": 10,
+          "stop_reason": "error",
+          "files_accessed": [],
+          "terraform_commands": [
+            "--help",
+            "state list"
+          ],
+          "mcp_tools_used": [
+            "get_schema",
+            "terraform_state_list",
+            "cli_help",
+            "mcp_terraform_get_schema",
+            "terraform_graph",
+            "query_graph",
+            "generalist"
+          ],
+          "total_tool_output_chars": 4081
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "prompt": "What resources directly depend on the ALB?",
+      "difficulty": "medium",
+      "category": "dependency-direct",
+      "scoring": {
+        "type": "set-overlap",
+        "ground_truth": {
+          "expected": [
+            "listener_http",
+            "listener_https",
+            "route53_record",
+            "waf_web_acl"
+          ],
+          "order_matters": false
+        }
+      },
+      "trials": [
+        {
+          "trial": 1,
+          "answer": "",
+          "tokens_in": 1715,
+          "tokens_out": 95,
+          "cost_usd": 0,
+          "tool_calls": 0,
+          "tool_call_details": [],
+          "wall_time_ms": 0,
+          "num_turns": 1,
+          "stop_reason": "error",
+          "files_accessed": [],
+          "terraform_commands": [],
+          "mcp_tools_used": [],
+          "total_tool_output_chars": 0
+        },
+        {
+          "trial": 2,
+          "answer": "",
+          "tokens_in": 1700,
+          "tokens_out": 100,
+          "cost_usd": 0,
+          "tool_calls": 0,
+          "tool_call_details": [],
+          "wall_time_ms": 0,
+          "num_turns": 1,
+          "stop_reason": "error",
+          "files_accessed": [],
+          "terraform_commands": [],
+          "mcp_tools_used": [],
+          "total_tool_output_chars": 0
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "prompt": "Which resources in the compute module reference the key_pair?",
+      "difficulty": "medium",
+      "category": "dependency-direct",
+      "scoring": {
+        "type": "set-overlap",
+        "ground_truth": {
+          "expected": [
+            "launch_template_web",
+            "launch_template_app",
+            "web_instance_1",
+            "web_instance_2",
+            "app_instance_1",
+            "app_instance_2",
+            "bastion"
+          ],
+          "order_matters": false
+        }
+      },
+      "trials": [
+        {
+          "trial": 1,
+          "answer": "",
+          "tokens_in": 1731,
+          "tokens_out": 52,
+          "cost_usd": 0,
+          "tool_calls": 0,
+          "tool_call_details": [],
+          "wall_time_ms": 0,
+          "num_turns": 1,
+          "stop_reason": "error",
+          "files_accessed": [],
+          "terraform_commands": [],
+          "mcp_tools_used": [],
+          "total_tool_output_chars": 0
+        },
+        {
+          "trial": 2,
+          "answer": "",
+          "tokens_in": 1716,
+          "tokens_out": 78,
+          "cost_usd": 0,
+          "tool_calls": 0,
+          "tool_call_details": [],
+          "wall_time_ms": 0,
+          "num_turns": 1,
+          "stop_reason": "error",
+          "files_accessed": [],
+          "terraform_commands": [],
+          "mcp_tools_used": [],
+          "total_tool_output_chars": 0
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "prompt": "Which resources reference the SNS topic?",
+      "difficulty": "medium",
+      "category": "dependency-direct",
+      "scoring": {
+        "type": "set-overlap",
+        "ground_truth": {
+          "expected": [
+            "sns_subscription_email",
+            "sns_subscription_slack",
+            "cw_alarm_cpu",
+            "cw_alarm_memory",
+            "cw_alarm_5xx",
+            "eventbridge_rule"
+          ],
+          "order_matters": false
+        }
+      },
+      "trials": [
+        {
+          "trial": 1,
+          "answer": "",
+          "tokens_in": 1720,
+          "tokens_out": 58,
+          "cost_usd": 0,
+          "tool_calls": 0,
+          "tool_call_details": [],
+          "wall_time_ms": 0,
+          "num_turns": 1,
+          "stop_reason": "error",
+          "files_accessed": [],
+          "terraform_commands": [],
+          "mcp_tools_used": [],
+          "total_tool_output_chars": 0
+        },
+        {
+          "trial": 2,
+          "answer": "",
+          "tokens_in": 1705,
+          "tokens_out": 60,
+          "cost_usd": 0,
+          "tool_calls": 0,
+          "tool_call_details": [],
+          "wall_time_ms": 0,
+          "num_turns": 1,
+          "stop_reason": "error",
+          "files_accessed": [],
+          "terraform_commands": [],
+          "mcp_tools_used": [],
+          "total_tool_output_chars": 0
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "prompt": "List all security group rules that allow inbound traffic from 0.0.0.0/0.",
+      "difficulty": "medium",
+      "category": "security-filter",
+      "scoring": {
+        "type": "set-overlap",
+        "ground_truth": {
+          "expected": [
+            "sg_alb: port 443 (HTTPS)",
+            "sg_rule_alb: port 80 (HTTP)"
+          ],
+          "order_matters": false
+        }
+      },
+      "trials": [
+        {
+          "trial": 1,
+          "answer": "",
+          "tokens_in": 1746,
+          "tokens_out": 80,
+          "cost_usd": 0,
+          "tool_calls": 0,
+          "tool_call_details": [],
+          "wall_time_ms": 0,
+          "num_turns": 1,
+          "stop_reason": "error",
+          "files_accessed": [],
+          "terraform_commands": [],
+          "mcp_tools_used": [],
+          "total_tool_output_chars": 0
+        },
+        {
+          "trial": 2,
+          "answer": "",
+          "tokens_in": 1731,
+          "tokens_out": 74,
+          "cost_usd": 0,
+          "tool_calls": 0,
+          "tool_call_details": [],
+          "wall_time_ms": 0,
+          "num_turns": 1,
+          "stop_reason": "error",
+          "files_accessed": [],
+          "terraform_commands": [],
+          "mcp_tools_used": [],
+          "total_tool_output_chars": 0
+        }
+      ]
+    },
+    {
+      "id": 14,
+      "prompt": "List all resources in the database module that have no dependencies on other database resources.",
+      "difficulty": "medium",
+      "category": "dependency-direct",
+      "scoring": {
+        "type": "set-overlap",
+        "ground_truth": {
+          "expected": [
+            "db_subnet_group",
+            "db_parameter_group",
+            "db_option_group",
+            "elasticache_subnet_group",
+            "elasticache_parameter_group",
+            "secrets_manager_secret"
+          ],
+          "order_matters": false
+        }
+      },
+      "trials": [
+        {
+          "trial": 1,
+          "answer": "",
+          "tokens_in": 1705,
+          "tokens_out": 81,
+          "cost_usd": 0,
+          "tool_calls": 0,
+          "tool_call_details": [],
+          "wall_time_ms": 0,
+          "num_turns": 1,
+          "stop_reason": "error",
+          "files_accessed": [],
+          "terraform_commands": [],
+          "mcp_tools_used": [],
+          "total_tool_output_chars": 0
+        },
+        {
+          "trial": 2,
+          "answer": "",
+          "tokens_in": 1690,
+          "tokens_out": 78,
+          "cost_usd": 0,
+          "tool_calls": 0,
+          "tool_call_details": [],
+          "wall_time_ms": 0,
+          "num_turns": 1,
+          "stop_reason": "error",
+          "files_accessed": [],
+          "terraform_commands": [],
+          "mcp_tools_used": [],
+          "total_tool_output_chars": 0
+        }
+      ]
+    },
+    {
+      "id": 15,
+      "prompt": "What modules does the monitoring module consume outputs from?",
+      "difficulty": "medium",
+      "category": "cross-module",
+      "scoring": {
+        "type": "set-overlap",
+        "ground_truth": {
+          "expected": [
+            "compute",
+            "database",
+            "loadbalancer"
+          ],
+          "order_matters": false
+        }
+      },
+      "trials": [
+        {
+          "trial": 1,
+          "answer": "",
+          "tokens_in": 1723,
+          "tokens_out": 62,
+          "cost_usd": 0,
+          "tool_calls": 0,
+          "tool_call_details": [],
+          "wall_time_ms": 0,
+          "num_turns": 1,
+          "stop_reason": "error",
+          "files_accessed": [],
+          "terraform_commands": [],
+          "mcp_tools_used": [],
+          "total_tool_output_chars": 0
+        },
+        {
+          "trial": 2,
+          "answer": "",
+          "tokens_in": 1708,
+          "tokens_out": 57,
+          "cost_usd": 0,
+          "tool_calls": 0,
+          "tool_call_details": [],
+          "wall_time_ms": 0,
+          "num_turns": 1,
+          "stop_reason": "error",
+          "files_accessed": [],
+          "terraform_commands": [],
+          "mcp_tools_used": [],
+          "total_tool_output_chars": 0
+        }
+      ]
+    },
+    {
+      "id": 16,
+      "prompt": "What ports are exposed by each security group for inbound traffic?",
+      "difficulty": "medium",
+      "category": "security-filter",
+      "scoring": {
+        "type": "checklist",
+        "ground_truth": {
+          "items": [
+            "sg_alb: 443",
+            "sg_web: 8080",
+            "sg_app: 3000",
+            "sg_db: 5432"
+          ],
+          "min_for_full": 4,
+          "min_for_partial": 2
+        }
+      },
+      "trials": [
+        {
+          "trial": 1,
+          "answer": "",
+          "tokens_in": 1731,
+          "tokens_out": 67,
+          "cost_usd": 0,
+          "tool_calls": 0,
+          "tool_call_details": [],
+          "wall_time_ms": 0,
+          "num_turns": 1,
+          "stop_reason": "error",
+          "files_accessed": [],
+          "terraform_commands": [],
+          "mcp_tools_used": [],
+          "total_tool_output_chars": 0
+        },
+        {
+          "trial": 2,
+          "answer": "",
+          "tokens_in": 1716,
+          "tokens_out": 98,
+          "cost_usd": 0,
+          "tool_calls": 0,
+          "tool_call_details": [],
+          "wall_time_ms": 0,
+          "num_turns": 1,
+          "stop_reason": "error",
+          "files_accessed": [],
+          "terraform_commands": [],
+          "mcp_tools_used": [],
+          "total_tool_output_chars": 0
+        }
+      ]
+    },
+    {
+      "id": 17,
+      "prompt": "List all resources that have encryption enabled (storage, at-rest, or in-transit).",
+      "difficulty": "medium",
+      "category": "security-filter",
+      "scoring": {
+        "type": "set-overlap",
+        "ground_truth": {
+          "expected": [
+            "rds_primary",
+            "rds_replica",
+            "elasticache_cluster",
+            "sns_topic",
+            "cw_log_group",
+            "secrets_manager_secret"
+          ],
+          "order_matters": false
+        }
+      },
+      "trials": [
+        {
+          "trial": 1,
+          "answer": "",
+          "tokens_in": 1750,
+          "tokens_out": 90,
+          "cost_usd": 0,
+          "tool_calls": 0,
+          "tool_call_details": [],
+          "wall_time_ms": 0,
+          "num_turns": 1,
+          "stop_reason": "error",
+          "files_accessed": [],
+          "terraform_commands": [],
+          "mcp_tools_used": [],
+          "total_tool_output_chars": 0
+        },
+        {
+          "trial": 2,
+          "answer": "",
+          "tokens_in": 1735,
+          "tokens_out": 76,
+          "cost_usd": 0,
+          "tool_calls": 0,
+          "tool_call_details": [],
+          "wall_time_ms": 0,
+          "num_turns": 1,
+          "stop_reason": "error",
+          "files_accessed": [],
+          "terraform_commands": [],
+          "mcp_tools_used": [],
+          "total_tool_output_chars": 0
+        }
+      ]
+    },
+    {
+      "id": 18,
+      "prompt": "What is the correct deployment order for the load balancer module?",
+      "difficulty": "medium",
+      "category": "deployment-order",
+      "scoring": {
+        "type": "topological-validation",
+        "ground_truth": {
+          "required_nodes": [
+            "acm_certificate",
+            "alb",
+            "target_group_web",
+            "target_group_app",
+            "listener_http",
+            "listener_https",
+            "listener_rule_web",
+            "listener_rule_app",
+            "route53_record",
+            "waf_web_acl"
+          ],
+          "must_precede": [
+            [
+              "acm_certificate",
+              "listener_https"
+            ],
+            [
+              "alb",
+              "listener_http"
+            ],
+            [
+              "alb",
+              "listener_https"
+            ],
+            [
+              "alb",
+              "route53_record"
+            ],
+            [
+              "alb",
+              "waf_web_acl"
+            ],
+            [
+              "listener_https",
+              "listener_rule_web"
+            ],
+            [
+              "listener_https",
+              "listener_rule_app"
+            ],
+            [
+              "target_group_web",
+              "listener_https"
+            ],
+            [
+              "target_group_web",
+              "listener_rule_web"
+            ],
+            [
+              "target_group_app",
+              "listener_rule_app"
+            ]
+          ]
+        }
+      },
+      "trials": [
+        {
+          "trial": 1,
+          "answer": "",
+          "tokens_in": 1731,
+          "tokens_out": 89,
+          "cost_usd": 0,
+          "tool_calls": 0,
+          "tool_call_details": [],
+          "wall_time_ms": 0,
+          "num_turns": 1,
+          "stop_reason": "error",
+          "files_accessed": [],
+          "terraform_commands": [],
+          "mcp_tools_used": [],
+          "total_tool_output_chars": 0
+        },
+        {
+          "trial": 2,
+          "answer": "",
+          "tokens_in": 1716,
+          "tokens_out": 66,
+          "cost_usd": 0,
+          "tool_calls": 0,
+          "tool_call_details": [],
+          "wall_time_ms": 0,
+          "num_turns": 1,
+          "stop_reason": "error",
+          "files_accessed": [],
+          "terraform_commands": [],
+          "mcp_tools_used": [],
+          "total_tool_output_chars": 0
+        }
+      ]
+    },
+    {
+      "id": 19,
+      "prompt": "Trace the full dependency chain from the HTTPS listener to the RDS primary database.",
+      "difficulty": "hard",
+      "category": "dependency-chain",
+      "scoring": {
+        "type": "topological-validation",
+        "ground_truth": {
+          "required_nodes": [
+            "listener_https",
+            "alb",
+            "sg_alb",
+            "sg_web",
+            "sg_app",
+            "sg_db",
+            "rds_primary"
+          ],
+          "must_precede": [
+            [
+              "listener_https",
+              "alb"
+            ],
+            [
+              "alb",
+              "sg_alb"
+            ],
+            [
+              "sg_alb",
+              "sg_web"
+            ],
+            [
+              "sg_web",
+              "sg_app"
+            ],
+            [
+              "sg_app",
+              "sg_db"
+            ],
+            [
+              "sg_db",
+              "rds_primary"
+            ]
+          ]
+        }
+      },
+      "trials": [
+        {
+          "trial": 1,
+          "answer": "",
+          "tokens_in": 1734,
+          "tokens_out": 66,
+          "cost_usd": 0,
+          "tool_calls": 0,
+          "tool_call_details": [],
+          "wall_time_ms": 0,
+          "num_turns": 1,
+          "stop_reason": "error",
+          "files_accessed": [],
+          "terraform_commands": [],
+          "mcp_tools_used": [],
+          "total_tool_output_chars": 0
+        },
+        {
+          "trial": 2,
+          "answer": "",
+          "tokens_in": 1719,
+          "tokens_out": 55,
+          "cost_usd": 0,
+          "tool_calls": 0,
+          "tool_call_details": [],
+          "wall_time_ms": 0,
+          "num_turns": 1,
+          "stop_reason": "error",
+          "files_accessed": [],
+          "terraform_commands": [],
+          "mcp_tools_used": [],
+          "total_tool_output_chars": 0
+        }
+      ]
+    },
+    {
+      "id": 20,
+      "prompt": "If I destroy the RDS primary instance, what is the full blast radius? List every affected resource.",
+      "difficulty": "hard",
+      "category": "impact-analysis",
+      "scoring": {
+        "type": "set-overlap",
+        "ground_truth": {
+          "expected": [
+            "rds_replica",
+            "secrets_manager_version"
+          ],
+          "order_matters": false
+        }
+      },
+      "trials": [
+        {
+          "trial": 1,
+          "answer": "",
+          "tokens_in": 1739,
+          "tokens_out": 91,
+          "cost_usd": 0,
+          "tool_calls": 0,
+          "tool_call_details": [],
+          "wall_time_ms": 0,
+          "num_turns": 1,
+          "stop_reason": "error",
+          "files_accessed": [],
+          "terraform_commands": [],
+          "mcp_tools_used": [],
+          "total_tool_output_chars": 0
+        },
+        {
+          "trial": 2,
+          "answer": "",
+          "tokens_in": 1724,
+          "tokens_out": 66,
+          "cost_usd": 0,
+          "tool_calls": 0,
+          "tool_call_details": [],
+          "wall_time_ms": 0,
+          "num_turns": 1,
+          "stop_reason": "error",
+          "files_accessed": [],
+          "terraform_commands": [],
+          "mcp_tools_used": [],
+          "total_tool_output_chars": 0
+        }
+      ]
+    },
+    {
+      "id": 21,
+      "prompt": "If I destroy sg_web, what resources across all modules are impacted?",
+      "difficulty": "hard",
+      "category": "impact-analysis",
+      "scoring": {
+        "type": "set-overlap",
+        "ground_truth": {
+          "expected": [
+            "sg_app",
+            "sg_db",
+            "sg_rule_web",
+            "sg_rule_app",
+            "sg_rule_db"
+          ],
+          "order_matters": false
+        }
+      },
+      "trials": [
+        {
+          "trial": 1,
+          "answer": "",
+          "tokens_in": 1728,
+          "tokens_out": 86,
+          "cost_usd": 0,
+          "tool_calls": 0,
+          "tool_call_details": [],
+          "wall_time_ms": 0,
+          "num_turns": 1,
+          "stop_reason": "error",
+          "files_accessed": [],
+          "terraform_commands": [],
+          "mcp_tools_used": [],
+          "total_tool_output_chars": 0
+        },
+        {
+          "trial": 2,
+          "answer": "",
+          "tokens_in": 1713,
+          "tokens_out": 79,
+          "cost_usd": 0,
+          "tool_calls": 0,
+          "tool_call_details": [],
+          "wall_time_ms": 0,
+          "num_turns": 1,
+          "stop_reason": "error",
+          "files_accessed": [],
+          "terraform_commands": [],
+          "mcp_tools_used": [],
+          "total_tool_output_chars": 0
+        }
+      ]
+    },
+    {
+      "id": 22,
+      "prompt": "What is the correct deployment order for the web tier, starting from the VPC and ending at the CloudWatch alarm?",
+      "difficulty": "hard",
+      "category": "deployment-order",
+      "scoring": {
+        "type": "topological-validation",
+        "ground_truth": {
+          "required_nodes": [
+            "vpc",
+            "private_subnet_1",
+            "sg_web",
+            "iam_role_web",
+            "key_pair",
+            "instance_profile_web",
+            "launch_template_web",
+            "asg_web",
+            "scaling_policy_web",
+            "cw_alarm_asg_web"
+          ],
+          "must_precede": [
+            [
+              "vpc",
+              "private_subnet_1"
+            ],
+            [
+              "sg_web",
+              "launch_template_web"
+            ],
+            [
+              "iam_role_web",
+              "instance_profile_web"
+            ],
+            [
+              "key_pair",
+              "launch_template_web"
+            ],
+            [
+              "instance_profile_web",
+              "launch_template_web"
+            ],
+            [
+              "launch_template_web",
+              "asg_web"
+            ],
+            [
+              "asg_web",
+              "scaling_policy_web"
+            ],
+            [
+              "scaling_policy_web",
+              "cw_alarm_asg_web"
+            ]
+          ]
+        }
+      },
+      "trials": [
+        {
+          "trial": 1,
+          "answer": "",
+          "tokens_in": 1748,
+          "tokens_out": 79,
+          "cost_usd": 0,
+          "tool_calls": 0,
+          "tool_call_details": [],
+          "wall_time_ms": 0,
+          "num_turns": 1,
+          "stop_reason": "error",
+          "files_accessed": [],
+          "terraform_commands": [],
+          "mcp_tools_used": [],
+          "total_tool_output_chars": 0
+        },
+        {
+          "trial": 2,
+          "answer": "",
+          "tokens_in": 1733,
+          "tokens_out": 90,
+          "cost_usd": 0,
+          "tool_calls": 0,
+          "tool_call_details": [],
+          "wall_time_ms": 0,
+          "num_turns": 1,
+          "stop_reason": "error",
+          "files_accessed": [],
+          "terraform_commands": [],
+          "mcp_tools_used": [],
+          "total_tool_output_chars": 0
+        }
+      ]
+    },
+    {
+      "id": 23,
+      "prompt": "Which module outputs does the compute module consume? List each output and the module it comes from.",
+      "difficulty": "hard",
+      "category": "cross-module",
+      "scoring": {
+        "type": "checklist",
+        "ground_truth": {
+          "items": [
+            "networking: private_subnet_ids",
+            "networking: public_subnet_ids",
+            "security: sg_web_id",
+            "security: sg_app_id",
+            "security: sg_alb_id",
+            "security: iam_role_web_arn",
+            "security: iam_role_app_arn",
+            "security: iam_role_web_name",
+            "security: iam_role_app_name"
+          ],
+          "min_for_full": 8,
+          "min_for_partial": 5
+        }
+      },
+      "trials": [
+        {
+          "trial": 1,
+          "answer": "",
+          "tokens_in": 1714,
+          "tokens_out": 78,
+          "cost_usd": 0,
+          "tool_calls": 0,
+          "tool_call_details": [],
+          "wall_time_ms": 0,
+          "num_turns": 1,
+          "stop_reason": "error",
+          "files_accessed": [],
+          "terraform_commands": [],
+          "mcp_tools_used": [],
+          "total_tool_output_chars": 0
+        },
+        {
+          "trial": 2,
+          "answer": "",
+          "tokens_in": 1699,
+          "tokens_out": 76,
+          "cost_usd": 0,
+          "tool_calls": 0,
+          "tool_call_details": [],
+          "wall_time_ms": 0,
+          "num_turns": 1,
+          "stop_reason": "error",
+          "files_accessed": [],
+          "terraform_commands": [],
+          "mcp_tools_used": [],
+          "total_tool_output_chars": 0
+        }
+      ]
+    },
+    {
+      "id": 24,
+      "prompt": "Trace the dependency path from the CloudWatch dashboard to the VPC. What is the minimum set of resources on that path?",
+      "difficulty": "hard",
+      "category": "dependency-chain",
+      "scoring": {
+        "type": "checklist",
+        "ground_truth": {
+          "items": [
+            "cw_dashboard references compute or database or loadbalancer outputs",
+            "monitoring module depends on compute, database, and loadbalancer",
+            "compute or loadbalancer depends on networking via security",
+            "networking contains vpc"
+          ],
+          "min_for_full": 3,
+          "min_for_partial": 2
+        }
+      },
+      "trials": [
+        {
+          "trial": 1,
+          "answer": "",
+          "tokens_in": 1755,
+          "tokens_out": 85,
+          "cost_usd": 0,
+          "tool_calls": 0,
+          "tool_call_details": [],
+          "wall_time_ms": 0,
+          "num_turns": 1,
+          "stop_reason": "error",
+          "files_accessed": [],
+          "terraform_commands": [],
+          "mcp_tools_used": [],
+          "total_tool_output_chars": 0
+        },
+        {
+          "trial": 2,
+          "answer": "",
+          "tokens_in": 1740,
+          "tokens_out": 89,
+          "cost_usd": 0,
+          "tool_calls": 0,
+          "tool_call_details": [],
+          "wall_time_ms": 0,
+          "num_turns": 1,
+          "stop_reason": "error",
+          "files_accessed": [],
+          "terraform_commands": [],
+          "mcp_tools_used": [],
+          "total_tool_output_chars": 0
+        }
+      ]
+    },
+    {
+      "id": 25,
+      "prompt": "If the NAT gateway fails, which resources and tiers lose connectivity? Trace the impact.",
+      "difficulty": "hard",
+      "category": "impact-analysis",
+      "scoring": {
+        "type": "checklist",
+        "ground_truth": {
+          "items": [
+            "route_table_private directly depends on nat_gateway",
+            "private subnets lose internet routing",
+            "compute instances in private subnets affected",
+            "app tier and web tier lose outbound connectivity"
+          ],
+          "min_for_full": 3,
+          "min_for_partial": 2
+        }
+      },
+      "trials": [
+        {
+          "trial": 1,
+          "answer": "",
+          "tokens_in": 1742,
+          "tokens_out": 96,
+          "cost_usd": 0,
+          "tool_calls": 0,
+          "tool_call_details": [],
+          "wall_time_ms": 0,
+          "num_turns": 1,
+          "stop_reason": "error",
+          "files_accessed": [],
+          "terraform_commands": [],
+          "mcp_tools_used": [],
+          "total_tool_output_chars": 0
+        },
+        {
+          "trial": 2,
+          "answer": "",
+          "tokens_in": 1727,
+          "tokens_out": 113,
+          "cost_usd": 0,
+          "tool_calls": 0,
+          "tool_call_details": [],
+          "wall_time_ms": 0,
+          "num_turns": 1,
+          "stop_reason": "error",
+          "files_accessed": [],
+          "terraform_commands": [],
+          "mcp_tools_used": [],
+          "total_tool_output_chars": 0
+        }
+      ]
+    },
+    {
+      "id": 26,
+      "prompt": "What Terraform resources would I need to add to deploy a new microservice behind the existing ALB?",
+      "difficulty": "hard",
+      "category": "planning",
+      "scoring": {
+        "type": "checklist",
+        "ground_truth": {
+          "items": [
+            "security group",
+            "IAM role",
+            "instance profile",
+            "launch template",
+            "auto scaling group",
+            "target group",
+            "listener rule",
+            "scaling policy"
+          ],
+          "min_for_full": 7,
+          "min_for_partial": 4
+        }
+      },
+      "trials": [
+        {
+          "trial": 1,
+          "answer": "",
+          "tokens_in": 1738,
+          "tokens_out": 89,
+          "cost_usd": 0,
+          "tool_calls": 0,
+          "tool_call_details": [],
+          "wall_time_ms": 0,
+          "num_turns": 1,
+          "stop_reason": "error",
+          "files_accessed": [],
+          "terraform_commands": [],
+          "mcp_tools_used": [],
+          "total_tool_output_chars": 0
+        },
+        {
+          "trial": 2,
+          "answer": "",
+          "tokens_in": 1723,
+          "tokens_out": 100,
+          "cost_usd": 0,
+          "tool_calls": 0,
+          "tool_call_details": [],
+          "wall_time_ms": 0,
+          "num_turns": 1,
+          "stop_reason": "error",
+          "files_accessed": [],
+          "terraform_commands": [],
+          "mcp_tools_used": [],
+          "total_tool_output_chars": 0
+        }
+      ]
+    },
+    {
+      "id": 27,
+      "prompt": "What is the full dependency chain from the WAF to the VPC? List every resource on the path.",
+      "difficulty": "hard",
+      "category": "dependency-chain",
+      "scoring": {
+        "type": "topological-validation",
+        "ground_truth": {
+          "required_nodes": [
+            "waf_web_acl",
+            "alb"
+          ],
+          "must_precede": [
+            [
+              "waf_web_acl",
+              "alb"
+            ]
+          ]
+        }
+      },
+      "trials": [
+        {
+          "trial": 1,
+          "answer": "",
+          "tokens_in": 1734,
+          "tokens_out": 71,
+          "cost_usd": 0,
+          "tool_calls": 0,
+          "tool_call_details": [],
+          "wall_time_ms": 0,
+          "num_turns": 1,
+          "stop_reason": "error",
+          "files_accessed": [],
+          "terraform_commands": [],
+          "mcp_tools_used": [],
+          "total_tool_output_chars": 0
+        },
+        {
+          "trial": 2,
+          "answer": "",
+          "tokens_in": 1719,
+          "tokens_out": 69,
+          "cost_usd": 0,
+          "tool_calls": 0,
+          "tool_call_details": [],
+          "wall_time_ms": 0,
+          "num_turns": 1,
+          "stop_reason": "error",
+          "files_accessed": [],
+          "terraform_commands": [],
+          "mcp_tools_used": [],
+          "total_tool_output_chars": 0
+        }
+      ]
+    },
+    {
+      "id": 28,
+      "prompt": "Which resources are leaf nodes (nothing else depends on them) in the security module?",
+      "difficulty": "hard",
+      "category": "dependency-direct",
+      "scoring": {
+        "type": "set-overlap",
+        "ground_truth": {
+          "expected": [
+            "sg_db",
+            "sg_rule_alb",
+            "sg_rule_web",
+            "sg_rule_app",
+            "sg_rule_db",
+            "iam_policy_web",
+            "iam_policy_app",
+            "iam_policy_db"
+          ],
+          "order_matters": false
+        }
+      },
+      "trials": [
+        {
+          "trial": 1,
+          "answer": "",
+          "tokens_in": 1724,
+          "tokens_out": 82,
+          "cost_usd": 0,
+          "tool_calls": 0,
+          "tool_call_details": [],
+          "wall_time_ms": 0,
+          "num_turns": 1,
+          "stop_reason": "error",
+          "files_accessed": [],
+          "terraform_commands": [],
+          "mcp_tools_used": [],
+          "total_tool_output_chars": 0
+        },
+        {
+          "trial": 2,
+          "answer": "",
+          "tokens_in": 1709,
+          "tokens_out": 92,
+          "cost_usd": 0,
+          "tool_calls": 0,
+          "tool_call_details": [],
+          "wall_time_ms": 0,
+          "num_turns": 1,
+          "stop_reason": "error",
+          "files_accessed": [],
+          "terraform_commands": [],
+          "mcp_tools_used": [],
+          "total_tool_output_chars": 0
+        }
+      ]
+    },
+    {
+      "id": 29,
+      "prompt": "Compare the web tier and app tier deployment stacks. What resources does each tier have and how do they mirror each other?",
+      "difficulty": "hard",
+      "category": "cross-module",
+      "scoring": {
+        "type": "checklist",
+        "ground_truth": {
+          "items": [
+            "launch_template_web / launch_template_app",
+            "asg_web / asg_app",
+            "web_instance_1,2 / app_instance_1,2",
+            "instance_profile_web / instance_profile_app",
+            "scaling_policy_web / scaling_policy_app",
+            "cw_alarm_asg_web / cw_alarm_asg_app",
+            "sg_web / sg_app"
+          ],
+          "min_for_full": 6,
+          "min_for_partial": 3
+        }
+      },
+      "trials": [
+        {
+          "trial": 1,
+          "answer": "",
+          "tokens_in": 1755,
+          "tokens_out": 89,
+          "cost_usd": 0,
+          "tool_calls": 0,
+          "tool_call_details": [],
+          "wall_time_ms": 0,
+          "num_turns": 1,
+          "stop_reason": "error",
+          "files_accessed": [],
+          "terraform_commands": [],
+          "mcp_tools_used": [],
+          "total_tool_output_chars": 0
+        },
+        {
+          "trial": 2,
+          "answer": "",
+          "tokens_in": 1740,
+          "tokens_out": 81,
+          "cost_usd": 0,
+          "tool_calls": 0,
+          "tool_call_details": [],
+          "wall_time_ms": 0,
+          "num_turns": 1,
+          "stop_reason": "error",
+          "files_accessed": [],
+          "terraform_commands": [],
+          "mcp_tools_used": [],
+          "total_tool_output_chars": 0
+        }
+      ]
+    },
+    {
+      "id": 30,
+      "prompt": "If I need to rotate the RDS credentials, trace every resource that stores or references the database connection information.",
+      "difficulty": "hard",
+      "category": "dependency-chain",
+      "scoring": {
+        "type": "set-overlap",
+        "ground_truth": {
+          "expected": [
+            "rds_primary",
+            "rds_replica",
+            "secrets_manager_secret",
+            "secrets_manager_version",
+            "cw_dashboard"
+          ],
+          "order_matters": false
+        }
+      },
+      "trials": [
+        {
+          "trial": 1,
+          "answer": "",
+          "tokens_in": 1746,
+          "tokens_out": 73,
+          "cost_usd": 0,
+          "tool_calls": 0,
+          "tool_call_details": [],
+          "wall_time_ms": 0,
+          "num_turns": 1,
+          "stop_reason": "error",
+          "files_accessed": [],
+          "terraform_commands": [],
+          "mcp_tools_used": [],
+          "total_tool_output_chars": 0
+        },
+        {
+          "trial": 2,
+          "answer": "",
+          "tokens_in": 1731,
+          "tokens_out": 92,
+          "cost_usd": 0,
+          "tool_calls": 0,
+          "tool_call_details": [],
+          "wall_time_ms": 0,
+          "num_turns": 1,
+          "stop_reason": "error",
+          "files_accessed": [],
+          "terraform_commands": [],
+          "mcp_tools_used": [],
+          "total_tool_output_chars": 0
+        }
+      ]
+    }
+  ]
+}
