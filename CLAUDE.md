@@ -89,6 +89,7 @@ All meaningful files in this repo. Update this section when files are added or r
 |------|---------|
 | `src/tools/query_graph.ts` | MCP tool: execute GraphQL with compact schema summary in description. |
 | `src/tools/get_schema.ts` | MCP tool: return SDL + scoped prebuilt queries (optional module/resource param). |
+| `src/tools/unified.ts` | MCP tool: single "terraform" tool replacing all 12 read-tier tools when `TERRAFORM_MCP_UNIFIED=1`. |
 
 ### Config & Tests
 | File | Purpose |
@@ -97,6 +98,10 @@ All meaningful files in this repo. Update this section when files are added or r
 | `tsconfig.json` | TypeScript config — ES2022, Node16, strict mode. |
 | `test-mcp.mjs` | CLI smoke test — spawns MCP server, runs validate and plan against test-infra/. |
 | `test-graphql.mjs` | GraphQL integration test — 6 scenarios against dummy-infra (75 resources). |
+| `test-cli-tools.mjs` | CLI tool integration test — validates terraform_* tool registrations. |
+| `test-dag-graphql.mjs` | DAG + GraphQL integration test — end-to-end graph query validation. |
+| `test-gates.mjs` | Gate system test — verifies 3-tier tool visibility enforcement. |
+| `test-prebuilt.mjs` | Prebuilt query test — validates scoped query generation from live graph. |
 
 ### Test Infrastructure
 | File | Purpose |
@@ -108,7 +113,7 @@ All meaningful files in this repo. Update this section when files are added or r
 |------|---------|--------|
 | `experiments/baseline/dummy-infra/` | 75-resource null_resource project simulating 3-tier AWS deployment. | Done (#12) |
 | `experiments/baseline/dummy-infra/README.md` | Infrastructure structure, dependency chains, change log. | Done |
-| `experiments/baseline/prompts.json` | 10 task prompts + ground truth answers (3 easy, 4 medium, 3 hard). | Done (#13) |
+| `experiments/baseline/prompts.json` | 30 task prompts + ground truth answers (8 easy, 10 medium, 12 hard) v2.0. 10 categories, 4 scoring types. | Done (#13) |
 | `experiments/baseline/runner.ts` | Claude Code CLI headless runner — raw CLI mode baseline. | Done (#14) |
 | `experiments/baseline/scorer.ts` | Category-specific scorer — outputs JSON + markdown summary table. | Done (#15) |
 | `experiments/baseline/visualize.ts` | Chart.js HTML dashboard generator — 6 charts from scored results. | Done |

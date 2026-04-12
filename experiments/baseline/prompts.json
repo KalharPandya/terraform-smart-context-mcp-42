@@ -1,6 +1,6 @@
 {
-  "version": "1.0",
-  "description": "Baseline experiment prompts for 75-resource dummy Terraform infrastructure. 10 prompts (3 easy, 4 medium, 3 hard) with ground truth answers for automated scoring.",
+  "version": "2.0",
+  "description": "Comprehensive experiment prompts for 75-resource dummy Terraform infrastructure. 30 prompts (8 easy, 10 medium, 12 hard) with ground truth answers for automated scoring. 2 trials per prompt. Covers attribute lookup, enumeration, dependency traversal, impact analysis, blast radius, cross-module chains, deployment ordering, and security filtering.",
   "infra_path": "./dummy-infra",
   "prompts": [
     {
@@ -17,6 +17,50 @@
     },
     {
       "id": 2,
+      "prompt": "What is the public IP of the bastion host?",
+      "difficulty": "easy",
+      "category": "attribute-lookup",
+      "scoring": {
+        "type": "substring-match",
+        "ground_truth": {
+          "substrings": ["54.210.167.100"]
+        }
+      }
+    },
+    {
+      "id": 3,
+      "prompt": "What database engine and port does the RDS primary instance use?",
+      "difficulty": "easy",
+      "category": "attribute-lookup",
+      "scoring": {
+        "type": "substring-match",
+        "ground_truth": {
+          "substrings": ["postgresql", "5432"]
+        }
+      }
+    },
+    {
+      "id": 4,
+      "prompt": "List all six modules in the infrastructure.",
+      "difficulty": "easy",
+      "category": "enumeration",
+      "scoring": {
+        "type": "set-overlap",
+        "ground_truth": {
+          "expected": [
+            "networking",
+            "security",
+            "compute",
+            "database",
+            "loadbalancer",
+            "monitoring"
+          ],
+          "order_matters": false
+        }
+      }
+    },
+    {
+      "id": 5,
       "prompt": "List all subnets and their availability zones.",
       "difficulty": "easy",
       "category": "enumeration",
@@ -38,7 +82,59 @@
       }
     },
     {
-      "id": 3,
+      "id": 6,
+      "prompt": "How many resources are there in total? Break down the count by module.",
+      "difficulty": "easy",
+      "category": "inventory",
+      "scoring": {
+        "type": "checklist",
+        "ground_truth": {
+          "items": [
+            "75 total",
+            "networking: 15",
+            "security: 14",
+            "compute: 16",
+            "database: 10",
+            "loadbalancer: 10",
+            "monitoring: 10"
+          ],
+          "min_for_full": 7,
+          "min_for_partial": 4
+        }
+      }
+    },
+    {
+      "id": 7,
+      "prompt": "What are the names of all four security groups?",
+      "difficulty": "easy",
+      "category": "enumeration",
+      "scoring": {
+        "type": "set-overlap",
+        "ground_truth": {
+          "expected": [
+            "sg_alb",
+            "sg_web",
+            "sg_app",
+            "sg_db"
+          ],
+          "order_matters": false
+        }
+      }
+    },
+    {
+      "id": 8,
+      "prompt": "What is the Redis cache engine version and node type?",
+      "difficulty": "easy",
+      "category": "attribute-lookup",
+      "scoring": {
+        "type": "substring-match",
+        "ground_truth": {
+          "substrings": ["7.0", "cache.r6g.large"]
+        }
+      }
+    },
+    {
+      "id": 9,
       "prompt": "What resources directly depend on the VPC?",
       "difficulty": "medium",
       "category": "dependency-direct",
@@ -64,24 +160,66 @@
       }
     },
     {
-      "id": 4,
-      "prompt": "If I destroy the DB subnet group, what resources are affected?",
-      "difficulty": "hard",
-      "category": "impact-analysis",
+      "id": 10,
+      "prompt": "What resources directly depend on the ALB?",
+      "difficulty": "medium",
+      "category": "dependency-direct",
       "scoring": {
         "type": "set-overlap",
         "ground_truth": {
           "expected": [
-            "rds_primary",
-            "rds_replica",
-            "secrets_manager_version"
+            "listener_http",
+            "listener_https",
+            "route53_record",
+            "waf_web_acl"
           ],
           "order_matters": false
         }
       }
     },
     {
-      "id": 5,
+      "id": 11,
+      "prompt": "Which resources in the compute module reference the key_pair?",
+      "difficulty": "medium",
+      "category": "dependency-direct",
+      "scoring": {
+        "type": "set-overlap",
+        "ground_truth": {
+          "expected": [
+            "launch_template_web",
+            "launch_template_app",
+            "web_instance_1",
+            "web_instance_2",
+            "app_instance_1",
+            "app_instance_2",
+            "bastion"
+          ],
+          "order_matters": false
+        }
+      }
+    },
+    {
+      "id": 12,
+      "prompt": "Which resources reference the SNS topic?",
+      "difficulty": "medium",
+      "category": "dependency-direct",
+      "scoring": {
+        "type": "set-overlap",
+        "ground_truth": {
+          "expected": [
+            "sns_subscription_email",
+            "sns_subscription_slack",
+            "cw_alarm_cpu",
+            "cw_alarm_memory",
+            "cw_alarm_5xx",
+            "eventbridge_rule"
+          ],
+          "order_matters": false
+        }
+      }
+    },
+    {
+      "id": 13,
       "prompt": "List all security group rules that allow inbound traffic from 0.0.0.0/0.",
       "difficulty": "medium",
       "category": "security-filter",
@@ -97,8 +235,119 @@
       }
     },
     {
-      "id": 6,
-      "prompt": "Trace the full dependency chain from the ALB HTTPS listener to the RDS primary database.",
+      "id": 14,
+      "prompt": "List all resources in the database module that have no dependencies on other database resources.",
+      "difficulty": "medium",
+      "category": "dependency-direct",
+      "scoring": {
+        "type": "set-overlap",
+        "ground_truth": {
+          "expected": [
+            "db_subnet_group",
+            "db_parameter_group",
+            "db_option_group",
+            "elasticache_subnet_group",
+            "elasticache_parameter_group",
+            "secrets_manager_secret"
+          ],
+          "order_matters": false
+        }
+      }
+    },
+    {
+      "id": 15,
+      "prompt": "What modules does the monitoring module consume outputs from?",
+      "difficulty": "medium",
+      "category": "cross-module",
+      "scoring": {
+        "type": "set-overlap",
+        "ground_truth": {
+          "expected": [
+            "compute",
+            "database",
+            "loadbalancer"
+          ],
+          "order_matters": false
+        }
+      }
+    },
+    {
+      "id": 16,
+      "prompt": "What ports are exposed by each security group for inbound traffic?",
+      "difficulty": "medium",
+      "category": "security-filter",
+      "scoring": {
+        "type": "checklist",
+        "ground_truth": {
+          "items": [
+            "sg_alb: 443",
+            "sg_web: 8080",
+            "sg_app: 3000",
+            "sg_db: 5432"
+          ],
+          "min_for_full": 4,
+          "min_for_partial": 2
+        }
+      }
+    },
+    {
+      "id": 17,
+      "prompt": "List all resources that have encryption enabled (storage, at-rest, or in-transit).",
+      "difficulty": "medium",
+      "category": "security-filter",
+      "scoring": {
+        "type": "set-overlap",
+        "ground_truth": {
+          "expected": [
+            "rds_primary",
+            "rds_replica",
+            "elasticache_cluster",
+            "sns_topic",
+            "cw_log_group",
+            "secrets_manager_secret"
+          ],
+          "order_matters": false
+        }
+      }
+    },
+    {
+      "id": 18,
+      "prompt": "What is the correct deployment order for the load balancer module?",
+      "difficulty": "medium",
+      "category": "deployment-order",
+      "scoring": {
+        "type": "topological-validation",
+        "ground_truth": {
+          "required_nodes": [
+            "acm_certificate",
+            "alb",
+            "target_group_web",
+            "target_group_app",
+            "listener_http",
+            "listener_https",
+            "listener_rule_web",
+            "listener_rule_app",
+            "route53_record",
+            "waf_web_acl"
+          ],
+          "must_precede": [
+            ["acm_certificate", "listener_https"],
+            ["alb", "listener_http"],
+            ["alb", "listener_https"],
+            ["alb", "route53_record"],
+            ["alb", "waf_web_acl"],
+            ["listener_https", "listener_rule_web"],
+            ["listener_https", "listener_rule_app"],
+            ["target_group_web", "listener_https"],
+            ["target_group_web", "listener_rule_web"],
+            ["target_group_app", "listener_rule_app"]
+          ]
+        }
+      }
+    },
+    {
+      "id": 19,
+      "prompt": "Trace the full dependency chain from the HTTPS listener to the RDS primary database.",
       "difficulty": "hard",
       "category": "dependency-chain",
       "scoring": {
@@ -125,29 +374,67 @@
       }
     },
     {
-      "id": 7,
-      "prompt": "What is the correct deployment order for the web tier resources?",
-      "difficulty": "medium",
+      "id": 20,
+      "prompt": "If I destroy the RDS primary instance, what is the full blast radius? List every affected resource.",
+      "difficulty": "hard",
+      "category": "impact-analysis",
+      "scoring": {
+        "type": "set-overlap",
+        "ground_truth": {
+          "expected": [
+            "rds_replica",
+            "secrets_manager_version"
+          ],
+          "order_matters": false
+        }
+      }
+    },
+    {
+      "id": 21,
+      "prompt": "If I destroy sg_web, what resources across all modules are impacted?",
+      "difficulty": "hard",
+      "category": "impact-analysis",
+      "scoring": {
+        "type": "set-overlap",
+        "ground_truth": {
+          "expected": [
+            "sg_app",
+            "sg_db",
+            "sg_rule_web",
+            "sg_rule_app",
+            "sg_rule_db"
+          ],
+          "order_matters": false
+        }
+      }
+    },
+    {
+      "id": 22,
+      "prompt": "What is the correct deployment order for the web tier, starting from the VPC and ending at the CloudWatch alarm?",
+      "difficulty": "hard",
       "category": "deployment-order",
       "scoring": {
         "type": "topological-validation",
         "ground_truth": {
           "required_nodes": [
+            "vpc",
+            "private_subnet_1",
+            "sg_web",
+            "iam_role_web",
             "key_pair",
             "instance_profile_web",
             "launch_template_web",
             "asg_web",
-            "web_instance_1",
-            "web_instance_2",
             "scaling_policy_web",
             "cw_alarm_asg_web"
           ],
           "must_precede": [
+            ["vpc", "private_subnet_1"],
+            ["sg_web", "launch_template_web"],
+            ["iam_role_web", "instance_profile_web"],
             ["key_pair", "launch_template_web"],
             ["instance_profile_web", "launch_template_web"],
             ["launch_template_web", "asg_web"],
-            ["asg_web", "web_instance_1"],
-            ["asg_web", "web_instance_2"],
             ["asg_web", "scaling_policy_web"],
             ["scaling_policy_web", "cw_alarm_asg_web"]
           ]
@@ -155,52 +442,69 @@
       }
     },
     {
-      "id": 8,
-      "prompt": "Which module outputs does the compute module consume?",
-      "difficulty": "medium",
+      "id": 23,
+      "prompt": "Which module outputs does the compute module consume? List each output and the module it comes from.",
+      "difficulty": "hard",
       "category": "cross-module",
-      "scoring": {
-        "type": "set-overlap",
-        "ground_truth": {
-          "expected": [
-            "private_subnet_ids",
-            "public_subnet_ids",
-            "sg_web_id",
-            "sg_app_id",
-            "sg_alb_id",
-            "iam_role_web_arn",
-            "iam_role_app_arn",
-            "iam_role_web_name",
-            "iam_role_app_name"
-          ],
-          "order_matters": false
-        }
-      }
-    },
-    {
-      "id": 9,
-      "prompt": "How many resources are there in total? Break down the count by module.",
-      "difficulty": "easy",
-      "category": "inventory",
       "scoring": {
         "type": "checklist",
         "ground_truth": {
           "items": [
-            "75 total",
-            "networking: 15",
-            "security: 14",
-            "compute: 16",
-            "database: 10",
-            "loadbalancer: 10",
-            "monitoring: 10"
+            "networking: private_subnet_ids",
+            "networking: public_subnet_ids",
+            "security: sg_web_id",
+            "security: sg_app_id",
+            "security: sg_alb_id",
+            "security: iam_role_web_arn",
+            "security: iam_role_app_arn",
+            "security: iam_role_web_name",
+            "security: iam_role_app_name"
           ],
-          "min_for_full": 7,
-          "min_for_partial": 4
+          "min_for_full": 8,
+          "min_for_partial": 5
         }
       }
     },
     {
-      "id": 10,
+      "id": 24,
+      "prompt": "Trace the dependency path from the CloudWatch dashboard to the VPC. What is the minimum set of resources on that path?",
+      "difficulty": "hard",
+      "category": "dependency-chain",
+      "scoring": {
+        "type": "checklist",
+        "ground_truth": {
+          "items": [
+            "cw_dashboard references compute or database or loadbalancer outputs",
+            "monitoring module depends on compute, database, and loadbalancer",
+            "compute or loadbalancer depends on networking via security",
+            "networking contains vpc"
+          ],
+          "min_for_full": 3,
+          "min_for_partial": 2
+        }
+      }
+    },
+    {
+      "id": 25,
+      "prompt": "If the NAT gateway fails, which resources and tiers lose connectivity? Trace the impact.",
+      "difficulty": "hard",
+      "category": "impact-analysis",
+      "scoring": {
+        "type": "checklist",
+        "ground_truth": {
+          "items": [
+            "route_table_private directly depends on nat_gateway",
+            "private subnets lose internet routing",
+            "compute instances in private subnets affected",
+            "app tier and web tier lose outbound connectivity"
+          ],
+          "min_for_full": 3,
+          "min_for_partial": 2
+        }
+      }
+    },
+    {
+      "id": 26,
       "prompt": "What Terraform resources would I need to add to deploy a new microservice behind the existing ALB?",
       "difficulty": "hard",
       "category": "planning",
@@ -219,6 +523,87 @@
           ],
           "min_for_full": 7,
           "min_for_partial": 4
+        }
+      }
+    },
+    {
+      "id": 27,
+      "prompt": "What is the full dependency chain from the WAF to the VPC? List every resource on the path.",
+      "difficulty": "hard",
+      "category": "dependency-chain",
+      "scoring": {
+        "type": "topological-validation",
+        "ground_truth": {
+          "required_nodes": [
+            "waf_web_acl",
+            "alb"
+          ],
+          "must_precede": [
+            ["waf_web_acl", "alb"]
+          ]
+        }
+      }
+    },
+    {
+      "id": 28,
+      "prompt": "Which resources are leaf nodes (nothing else depends on them) in the security module?",
+      "difficulty": "hard",
+      "category": "dependency-direct",
+      "scoring": {
+        "type": "set-overlap",
+        "ground_truth": {
+          "expected": [
+            "sg_db",
+            "sg_rule_alb",
+            "sg_rule_web",
+            "sg_rule_app",
+            "sg_rule_db",
+            "iam_policy_web",
+            "iam_policy_app",
+            "iam_policy_db"
+          ],
+          "order_matters": false
+        }
+      }
+    },
+    {
+      "id": 29,
+      "prompt": "Compare the web tier and app tier deployment stacks. What resources does each tier have and how do they mirror each other?",
+      "difficulty": "hard",
+      "category": "cross-module",
+      "scoring": {
+        "type": "checklist",
+        "ground_truth": {
+          "items": [
+            "launch_template_web / launch_template_app",
+            "asg_web / asg_app",
+            "web_instance_1,2 / app_instance_1,2",
+            "instance_profile_web / instance_profile_app",
+            "scaling_policy_web / scaling_policy_app",
+            "cw_alarm_asg_web / cw_alarm_asg_app",
+            "sg_web / sg_app"
+          ],
+          "min_for_full": 6,
+          "min_for_partial": 3
+        }
+      }
+    },
+    {
+      "id": 30,
+      "prompt": "If I need to rotate the RDS credentials, trace every resource that stores or references the database connection information.",
+      "difficulty": "hard",
+      "category": "dependency-chain",
+      "scoring": {
+        "type": "set-overlap",
+        "ground_truth": {
+          "expected": [
+            "rds_primary",
+            "rds_replica",
+            "secrets_manager_secret",
+            "secrets_manager_version",
+            "cw_dashboard"
+          ],
+          "order_matters": false
         }
       }
     }
