@@ -43,4 +43,4 @@ Clear your entry once the work is committed.
 [EXAMPLE 2026-01-01] Refactoring the GraphNode interface — do not build against it until this is committed.
 ```
 
-[Kalhar 2026-04-11] v1 MCP server committed (17 tools, GraphQL DAG, 3-tier gates). Tool-schema-reviewer flagged two warnings for follow-up: (1) CLI tool handlers in src/terraform/tools.ts missing try/catch for spawnSync ENOENT on bad cwd, (2) shell: true on Windows + user-controlled args in src/terraform/cli.ts — no input sanitization. Neither is blocking.
+[Kalhar 2026-04-11] Unified tool mode added (TERRAFORM_MCP_UNIFIED env toggle). MCP testing config bug fixed. All test scripts committed. Session closed.

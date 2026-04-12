@@ -46,6 +46,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Progress report (`reports/progress-report.md`): 10-section Markdown report covering problem, team, experiments, project plan (Mermaid Gantt), Claude Code-first development workflow, objectives, related work (10 references), hypothesis (original + revised), methodology, preliminary results (Mermaid charts), and impact. Closes #24.
 - Elevator pitch deck and script (`pitch/`): single-page HTML slide (`slides.html`) with 3-column layout covering problem, solution, and baseline proof — plus solo presenter script (`script.md`) with delivery notes for 2-minute video recording.
 
+- Unified tool mode (`src/tools/unified.ts`): single `terraform` tool replaces all 12 read-tier tools when `TERRAFORM_MCP_UNIFIED=1` — reduces tool enumeration overhead for LLMs.
+- Test scripts for CLI tools, DAG/GraphQL, gates, and prebuilt queries (`test-cli-tools.mjs`, `test-dag-graphql.mjs`, `test-gates.mjs`, `test-prebuilt.mjs`).
+- v2 GraphQL plan (`plans/v2-graphql-plan`).
+
 ### Changed
 - `src/index.ts` refactored from monolithic 6-tool file into modular bootstrap: reads gate, iterates tool registrations, wires DAG invalidation.
 - README.md rewritten: full MCP configuration guide (Claude Desktop, Claude Code, Cursor), all 17 tools documented with tiers, architecture diagram, GraphQL schema reference, testing instructions.
