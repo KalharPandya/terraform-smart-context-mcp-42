@@ -10,9 +10,6 @@ experiments/baseline/dummy-infra/.terraform.lock.hcl
 *.tfstate.backup
 *.tfplan
 
-# Experiment results (keep .gitkeep)
-experiments/baseline/results/*
-!experiments/baseline/results/.gitkeep
 
 # Env
 .env
