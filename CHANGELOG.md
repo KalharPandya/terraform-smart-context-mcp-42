@@ -49,6 +49,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Unified tool mode (`src/tools/unified.ts`): single `terraform` tool replaces all 12 read-tier tools when `TERRAFORM_MCP_UNIFIED=1` — reduces tool enumeration overhead for LLMs.
 - Test scripts for CLI tools, DAG/GraphQL, gates, and prebuilt queries (`test-cli-tools.mjs`, `test-dag-graphql.mjs`, `test-gates.mjs`, `test-prebuilt.mjs`).
 - v2 GraphQL plan (`plans/v2-graphql-plan`).
+- Experiment prompts v2.0 (`prompts.json`): 30 prompts (8 easy, 10 medium, 12 hard) across 10 categories with 4 scoring types. 70% graph-advantage prompts covering dependency traversal, impact analysis, blast radius, cross-module chains, and deployment ordering.
 
 ### Changed
 - `src/index.ts` refactored from monolithic 6-tool file into modular bootstrap: reads gate, iterates tool registrations, wires DAG invalidation.

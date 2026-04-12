@@ -43,4 +43,4 @@ Clear your entry once the work is committed.
 [EXAMPLE 2026-01-01] Refactoring the GraphNode interface — do not build against it until this is committed.
 ```
 
-[Kalhar 2026-04-11] Unified tool mode added (TERRAFORM_MCP_UNIFIED env toggle). MCP testing config bug fixed. All test scripts committed. Session closed.
+[Kalhar 2026-04-11] prompts.json upgraded to v2.0 (30 prompts, 8 easy / 10 medium / 12 hard). Trials set to 2. Runner/scorer not yet tested against new prompt set — verify before full experiment run.
