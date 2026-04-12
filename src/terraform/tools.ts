@@ -91,7 +91,9 @@ export function registerTerraformShow(server: McpServer, rootDir: string | null)
     {
       title: "Terraform Show",
       description:
-        "Run `terraform show -json` to display the current state as structured JSON.",
+        "Run `terraform show -json` to display the current state as structured JSON. " +
+        "WARNING: Returns the ENTIRE state (often 4000+ lines). " +
+        "For targeted queries, prefer query_graph or terraform_state_show.",
       inputSchema: z.object({ workingDir: workingDirSchema(rootDir) }),
     },
     async ({ workingDir }) => {
@@ -134,7 +136,8 @@ export function registerTerraformStateShow(server: McpServer, rootDir: string | 
     {
       title: "Terraform State Show",
       description:
-        "Run `terraform state show` to display a single resource's attributes from the state.",
+        "Run `terraform state show` to display a single resource's attributes from the state. " +
+        "Returns 50-200 lines per resource. For dependency/relationship queries, prefer query_graph.",
       inputSchema: z.object({
         workingDir: workingDirSchema(rootDir),
         address: z.string().describe("Full resource address (e.g. module.compute.aws_instance.web)"),

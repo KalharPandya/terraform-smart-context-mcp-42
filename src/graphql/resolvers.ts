@@ -15,6 +15,7 @@ function toGqlResource(node: DagNode) {
     shortName: node.shortName,
     module: node.module,
     resourceType: node.resourceType,
+    summary: node.summary,
     attributes: node.attributes,
     tags: node.tags,
     dependencies: ({ depth }: { depth?: number }) =>

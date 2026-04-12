@@ -2,14 +2,17 @@
 /**
  * Baseline Experiment Runner — Claude Code CLI Headless Mode
  *
- * Sends each prompt to Claude via the Claude Code CLI (`claude -p`) with only
- * Bash tool access and captures granular metrics per prompt trial.
+ * Sends each prompt to Claude via the Claude Code CLI (`claude -p`) and captures
+ * granular metrics per prompt trial.
  *
  * Usage:
- *   npx tsx experiments/baseline/runner.ts                  # run all prompts, 3 trials each
- *   npx tsx experiments/baseline/runner.ts --prompt 1       # run only prompt #1
- *   npx tsx experiments/baseline/runner.ts --trials 1       # 1 trial per prompt
- *   npx tsx experiments/baseline/runner.ts --mode raw       # explicit raw mode (default)
+ *   npx tsx experiments/baseline/runner.ts                             # all prompts, 3 trials, raw
+ *   npx tsx experiments/baseline/runner.ts --prompt 6                  # only prompt #6
+ *   npx tsx experiments/baseline/runner.ts --trials 1                  # 1 trial per prompt
+ *   npx tsx experiments/baseline/runner.ts --mode raw                  # raw CLI (default)
+ *   npx tsx experiments/baseline/runner.ts --mode mcp                  # MCP tools mode
+ *   npx tsx experiments/baseline/runner.ts --mode mcp --prompt 6 --trials 1 --live
+ *   npx tsx experiments/baseline/runner.ts --mode mcp --unified --prompt 1 --trials 1 --live
  */
 
 import { execSync, spawn } from "child_process";
@@ -23,12 +26,15 @@ import {
   readdirSync,
   mkdirSync,
   statSync,
+  unlinkSync,
 } from "fs";
 import { resolve, join, relative } from "path";
 import { tmpdir } from "os";
 import { randomUUID } from "crypto";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
+
+type Mode = "raw" | "mcp";
 
 interface PromptEntry {
   id: number;
@@ -71,6 +77,7 @@ interface TrialResult {
   stop_reason: string;
   files_accessed: string[];
   terraform_commands: string[];
+  mcp_tools_used: string[];
   total_tool_output_chars: number;
 }
 
@@ -85,7 +92,7 @@ interface PromptResult {
 
 interface RunResult {
   metadata: {
-    mode: string;
+    mode: Mode;
     model: string;
     timestamp: string;
     infra_path: string;
@@ -98,9 +105,6 @@ interface RunResult {
 
 // ─── Config ──────────────────────────────────────────────────────────────────
 
-const CLAUDE_BIN =
-  "/Users/parinshah/Library/Application Support/Claude/claude-code/2.1.85/claude.app/Contents/MacOS/claude";
-
 const MODEL = "sonnet";
 const MAX_BUDGET_USD = 2.0;
 
@@ -109,10 +113,40 @@ const SCRIPT_DIR = resolve(
     new URL(".", import.meta.url).pathname.replace(/^\/([A-Z]:)/, "$1")
   )
 );
+const REPO_ROOT = resolve(SCRIPT_DIR, "../..");
 const PROMPTS_PATH = join(SCRIPT_DIR, "prompts.json");
 const RESULTS_DIR = join(SCRIPT_DIR, "results");
+const MCP_SERVER_BIN = join(REPO_ROOT, "dist", "index.js");
 
-const SYSTEM_PROMPT = `You are an infrastructure assistant. There is a Terraform project in the current directory that is already initialized and applied (state exists with 75+ resources across 6 modules).
+// ─── Claude Binary Detection ─────────────────────────────────────────────────
+
+function findClaudeBin(): string {
+  // On Windows, NVM and other package managers create .cmd shims that Node's
+  // spawn can't execute directly. Return just "claude" and rely on shell: true.
+  if (process.platform === "win32") {
+    return "claude";
+  }
+
+  // Unix: find the actual binary path
+  try {
+    const found = execSync("which claude", { encoding: "utf-8" }).trim();
+    if (found && existsSync(found)) return found;
+  } catch {
+    // fall through
+  }
+
+  const mac =
+    "/Users/parinshah/Library/Application Support/Claude/claude-code/2.1.85/claude.app/Contents/MacOS/claude";
+  if (existsSync(mac)) return mac;
+
+  throw new Error(
+    "Claude CLI not found. Make sure `claude` is in your PATH or install Claude Code."
+  );
+}
+
+// ─── System Prompts ──────────────────────────────────────────────────────────
+
+const RAW_SYSTEM_PROMPT = `You are an infrastructure assistant. There is a Terraform project in the current directory that is already initialized and applied (state exists with 75+ resources across 6 modules).
 
 You have access to Bash to run:
 - terraform commands (state list, show -json, state show <address>, graph, output -json, etc.)
@@ -124,16 +158,98 @@ Rules:
 - Do not guess — verify with commands
 - Synthesize your answer clearly — do not dump raw command output`;
 
+function buildMcpSystemPrompt(infraPath: string, useUnified: boolean): string {
+  // Normalize to forward slashes so Claude doesn't misread on Windows
+  const dir = infraPath.replace(/\\/g, "/");
+
+  if (useUnified) {
+    return `You are an infrastructure assistant. The Terraform project is at: ${dir}
+
+The project is already initialized and applied. There are 75 resources across 6 modules in the state.
+
+You have one MCP tool: terraform. Use the "type" parameter to pick the operation.
+Always pass workingDir: "${dir}" in every call.
+
+Start with type: "schema" to discover GraphQL queries, then use type: "query" for dependency/relationship questions.
+
+Rules:
+- Use ONLY the terraform MCP tool. Do NOT use Bash or read files directly.
+- Do not guess — verify with tools.
+- Synthesize your answer clearly — do not dump raw tool output.`;
+  }
+
+  return `You are an infrastructure assistant. The Terraform project is at: ${dir}
+
+The project is already initialized and applied. There are 75 resources across 6 modules in the state.
+
+You have access to MCP tools from the connected terraform MCP server.
+Pass workingDir: "${dir}" in EVERY tool call.
+
+Available tools:
+  get_schema       — GraphQL SDL + prebuilt queries scoped to your infra
+  query_graph      — Execute GraphQL queries against the dependency DAG
+  terraform_state_list, terraform_state_show — View deployed resource state
+  terraform_graph  — DOT dependency graph
+  terraform_validate, terraform_plan — Validate/preview changes
+
+Rules:
+- Use ONLY MCP tools. Do NOT use Bash or read files directly.
+- Always pass workingDir: "${dir}" in every call.
+- Start with get_schema to discover available prebuilt queries.
+- Prefer query_graph for dependency and relationship questions.
+- Do not guess — verify with tools.
+- Synthesize your answer clearly — do not dump raw tool output.`;
+}
+
+// ─── MCP Tool List ───────────────────────────────────────────────────────────
+
+// These are the tool names as registered by the MCP server named "terraform".
+const MCP_ALLOWED_TOOLS = [
+  "mcp__terraform__get_schema",
+  "mcp__terraform__query_graph",
+  "mcp__terraform__terraform_state_list",
+  "mcp__terraform__terraform_state_show",
+  "mcp__terraform__terraform_graph",
+  "mcp__terraform__terraform_show",
+  "mcp__terraform__terraform_validate",
+  "mcp__terraform__terraform_plan",
+  "mcp__terraform__terraform_output",
+  "mcp__terraform__terraform_providers",
+  "mcp__terraform__terraform_fmt",
+  "mcp__terraform__terraform_init",
+];
+
+// Unified mode: single tool replaces all 12
+const MCP_UNIFIED_ALLOWED_TOOLS = ["mcp__terraform__terraform"];
+
+// ─── MCP Config File ─────────────────────────────────────────────────────────
+
+function writeMcpConfig(useUnified: boolean): string {
+  const serverEntry: Record<string, unknown> = {
+    command: "node",
+    args: [MCP_SERVER_BIN.replace(/\\/g, "/")],
+  };
+  if (useUnified) {
+    serverEntry.env = { TERRAFORM_MCP_UNIFIED: "1" };
+  }
+  const config = {
+    mcpServers: {
+      terraform: serverEntry,
+    },
+  };
+  const configPath = join(tmpdir(), `mcp-config-${randomUUID()}.json`);
+  writeFileSync(configPath, JSON.stringify(config, null, 2));
+  return configPath;
+}
+
 // ─── Temp Directory Management ───────────────────────────────────────────────
 
 function createTempInfraDir(infraDir: string): string {
   const tempDir = join(tmpdir(), `exp-${randomUUID()}`);
   mkdirSync(tempDir, { recursive: true });
 
-  // Copy .tf files preserving directory structure
   copyTfFiles(infraDir, tempDir, infraDir);
 
-  // Copy terraform state and config
   const filesToCopy = [
     ".terraform.lock.hcl",
     "terraform.tfstate",
@@ -146,7 +262,6 @@ function createTempInfraDir(infraDir: string): string {
     }
   }
 
-  // Copy .terraform directory (provider plugins)
   const terraformDir = join(infraDir, ".terraform");
   if (existsSync(terraformDir)) {
     cpSync(terraformDir, join(tempDir, ".terraform"), { recursive: true });
@@ -163,7 +278,6 @@ function copyTfFiles(srcDir: string, destDir: string, rootDir: string): void {
     const destPath = join(destDir, relPath);
 
     if (entry.isDirectory()) {
-      // Skip hidden dirs except we already handle .terraform separately
       if (entry.name.startsWith(".") || entry.name === "node_modules") continue;
       mkdirSync(destPath, { recursive: true });
       copyTfFiles(srcPath, destDir, rootDir);
@@ -197,11 +311,11 @@ interface StreamEvent {
       output_tokens: number;
     };
   };
-  tool_use_result?: {
-    stdout?: string;
-    stderr?: string;
-  };
-  // Result event fields
+  // Bash tools: { stdout, stderr }
+  // MCP tools: [{ type: "text", text: "..." }]
+  tool_use_result?:
+    | { stdout?: string; stderr?: string }
+    | Array<{ type: string; text?: string }>;
   result?: string;
   is_error?: boolean;
   duration_ms?: number;
@@ -227,6 +341,22 @@ interface StreamEvent {
   >;
 }
 
+/** Extract text from a tool_use_result regardless of format (Bash vs MCP) */
+function extractToolOutput(result: StreamEvent["tool_use_result"]): string {
+  if (!result) return "";
+  // MCP tools: top-level array [{type:"text", text:"..."}]
+  if (Array.isArray(result)) {
+    return result
+      .filter((c) => c.type === "text" && c.text)
+      .map((c) => c.text!)
+      .join("\n");
+  }
+  // Bash tools: {stdout, stderr}
+  const stdout = (result as any).stdout ?? "";
+  const stderr = (result as any).stderr ?? "";
+  return [stdout, stderr].filter(Boolean).join("\n");
+}
+
 function parseStreamOutput(rawOutput: string): {
   toolCalls: ToolCallRecord[];
   result: string;
@@ -247,13 +377,11 @@ function parseStreamOutput(rawOutput: string): {
   let num_turns = 0;
   let stop_reason = "unknown";
 
-  // Track pending tool uses to match with their results
   const pendingToolUses: Map<
     string,
     { name: string; input: Record<string, unknown> }
   > = new Map();
 
-  // Track per-turn token usage
   let lastTurnTokensIn = 0;
   let lastTurnTokensOut = 0;
 
@@ -265,14 +393,11 @@ function parseStreamOutput(rawOutput: string): {
       continue;
     }
 
-    // Assistant message with tool_use blocks
     if (event.type === "assistant" && event.message?.content) {
-      // Update per-turn tokens
       if (event.message.usage) {
         lastTurnTokensIn = event.message.usage.input_tokens;
         lastTurnTokensOut = event.message.usage.output_tokens;
       }
-
       for (const block of event.message.content) {
         if (block.type === "tool_use" && block.name) {
           pendingToolUses.set(block.name + "_" + toolCalls.length, {
@@ -283,18 +408,13 @@ function parseStreamOutput(rawOutput: string): {
       }
     }
 
-    // Tool result events
     if (event.type === "user" && event.tool_use_result) {
-      const stdout = event.tool_use_result.stdout ?? "";
-      const stderr = event.tool_use_result.stderr ?? "";
-      const fullOutput = [stdout, stderr].filter(Boolean).join("\n");
+      const fullOutput = extractToolOutput(event.tool_use_result);
 
-      // Match with the most recent pending tool use
       const lastKey = Array.from(pendingToolUses.keys()).pop();
       if (lastKey) {
         const pending = pendingToolUses.get(lastKey)!;
         pendingToolUses.delete(lastKey);
-
         toolCalls.push({
           name: pending.name,
           input: pending.input,
@@ -307,7 +427,6 @@ function parseStreamOutput(rawOutput: string): {
       }
     }
 
-    // Final result event
     if (event.type === "result") {
       result = event.result ?? "";
       cost_usd = event.total_cost_usd ?? 0;
@@ -315,7 +434,6 @@ function parseStreamOutput(rawOutput: string): {
       num_turns = event.num_turns ?? 0;
       stop_reason = event.stop_reason ?? "unknown";
 
-      // Prefer modelUsage for accurate token counts (includes cache tokens)
       if (event.modelUsage) {
         const modelStats = Object.values(event.modelUsage)[0];
         if (modelStats) {
@@ -325,12 +443,6 @@ function parseStreamOutput(rawOutput: string): {
             (modelStats.cacheCreationInputTokens ?? 0);
           tokens_out = modelStats.outputTokens;
         }
-      } else if (event.usage) {
-        tokens_in =
-          (event.usage.input_tokens ?? 0) +
-          (event.usage.cache_creation_input_tokens ?? 0) +
-          (event.usage.cache_read_input_tokens ?? 0);
-        tokens_out = event.usage.output_tokens ?? 0;
       }
     }
   }
@@ -347,19 +459,68 @@ function parseStreamOutput(rawOutput: string): {
   };
 }
 
+// ─── Live Event Printer ───────────────────────────────────────────────────────
+
+const C = {
+  reset: "\x1b[0m",
+  blue: "\x1b[34m",
+  green: "\x1b[32m",
+  yellow: "\x1b[33m",
+  gray: "\x1b[90m",
+  cyan: "\x1b[36m",
+  bold: "\x1b[1m",
+};
+
+function printLiveEvent(evt: StreamEvent, mode: Mode): void {
+  if (evt.type === "assistant" && evt.message?.content) {
+    for (const block of evt.message.content) {
+      if (block.type === "tool_use" && block.name) {
+        let inputSummary = "";
+        if (mode === "mcp") {
+          const q = (block.input as any)?.query;
+          const module_ = (block.input as any)?.module;
+          const resource = (block.input as any)?.resource;
+          const address = (block.input as any)?.address;
+          if (q) inputSummary = `query: "${String(q).slice(0, 70).replace(/\n/g, " ")}"`;
+          else if (address) inputSummary = `address: ${address}`;
+          else if (module_) inputSummary = `module: ${module_}`;
+          else if (resource) inputSummary = `resource: ${resource}`;
+        } else {
+          inputSummary = String((block.input as any)?.command ?? "").slice(0, 90).replace(/\n/g, " ");
+        }
+        // Shorten mcp__ prefix for display
+        const displayName = block.name.startsWith("mcp__terraform__")
+          ? block.name.replace("mcp__terraform__", "")
+          : block.name;
+        process.stdout.write(
+          `    ${C.blue}→ [${displayName}]${C.reset} ${C.gray}${inputSummary}${C.reset}\n`
+        );
+      } else if (block.type === "text" && block.text?.trim()) {
+        const firstLine = block.text.trim().split("\n")[0].slice(0, 100);
+        process.stdout.write(`    ${C.gray}💬 ${firstLine}${C.reset}\n`);
+      }
+    }
+  }
+
+  if (evt.type === "user" && evt.tool_use_result) {
+    const out = extractToolOutput(evt.tool_use_result);
+    const preview = out.slice(0, 80).replace(/\n/g, " ");
+    process.stdout.write(
+      `    ${C.green}← ${out.length.toLocaleString()} chars${C.reset} ${C.gray}${preview ? `"${preview}..."` : ""}${C.reset}\n`
+    );
+  }
+}
+
 // ─── Derived Metrics ─────────────────────────────────────────────────────────
 
 function extractFilesAccessed(toolCalls: ToolCallRecord[]): string[] {
   const files = new Set<string>();
   for (const tc of toolCalls) {
     const cmd = String(tc.input.command ?? "");
-    // Match cat/head/tail commands
     const fileMatch = cmd.match(
       /(?:cat|head|tail|less|more)\s+(?:-[^\s]+\s+)*([^\s|>]+)/
     );
-    if (fileMatch) {
-      files.add(fileMatch[1]);
-    }
+    if (fileMatch) files.add(fileMatch[1]);
   }
   return Array.from(files).sort();
 }
@@ -369,22 +530,44 @@ function extractTerraformCommands(toolCalls: ToolCallRecord[]): string[] {
   for (const tc of toolCalls) {
     const cmd = String(tc.input.command ?? "");
     const tfMatch = cmd.match(/terraform\s+(.+)/);
-    if (tfMatch) {
-      cmds.push(tfMatch[1].trim());
-    }
+    if (tfMatch) cmds.push(tfMatch[1].trim());
   }
   return cmds;
 }
 
+function extractMcpTools(toolCalls: ToolCallRecord[]): string[] {
+  return toolCalls
+    .map((tc) => tc.name)
+    .filter((n) => n.startsWith("mcp__"));
+}
+
 // ─── Trial Execution ─────────────────────────────────────────────────────────
 
-function runTrial(prompt: string, cwd: string): Promise<TrialResult> {
+function runTrial(
+  prompt: string,
+  cwd: string,
+  mode: Mode,
+  claudeBin: string,
+  mcpConfigPath: string | undefined,
+  liveLog: boolean,
+  dumpRaw: boolean = false,
+  useUnified: boolean = false
+): Promise<TrialResult> {
   return new Promise((resolvePromise, reject) => {
-    const fullPrompt = `${SYSTEM_PROMPT}\n\n---\n\nTask: ${prompt}`;
+    const systemPrompt =
+      mode === "mcp" ? buildMcpSystemPrompt(cwd, useUnified) : RAW_SYSTEM_PROMPT;
+    const fullPrompt = `${systemPrompt}\n\n---\n\nTask: ${prompt}`;
 
-    const args = [
+    // On Windows with shell: true, long/complex args get mangled by cmd.exe.
+    // Instead, pass a short -p trigger and pipe the full prompt via stdin.
+    // Claude CLI reads stdin as context when piped data is available.
+    const useStdin = process.platform === "win32";
+
+    const args: string[] = [
       "-p",
-      fullPrompt,
+      useStdin
+        ? "Follow the instructions and complete the task provided via stdin."
+        : fullPrompt,
       "--output-format",
       "stream-json",
       "--verbose",
@@ -392,26 +575,64 @@ function runTrial(prompt: string, cwd: string): Promise<TrialResult> {
       MODEL,
       "--max-budget-usd",
       String(MAX_BUDGET_USD),
-      "--tools",
-      "Bash",
-      "--allowedTools",
-      "Bash",
       "--dangerously-skip-permissions",
       "--disable-slash-commands",
       "--no-session-persistence",
     ];
 
+    if (mode === "raw") {
+      args.push("--tools", "Bash", "--allowedTools", "Bash");
+    } else {
+      // MCP mode: load the server, only load + allow MCP tools (no built-in tools)
+      args.push("--mcp-config", mcpConfigPath!);
+      const allowedTools = useUnified ? MCP_UNIFIED_ALLOWED_TOOLS : MCP_ALLOWED_TOOLS;
+      args.push("--tools", allowedTools.join(","));
+      args.push("--allowedTools", allowedTools.join(","));
+    }
+
     let rawOutput = "";
     let stderrOutput = "";
+    let lineBuffer = "";
 
-    const proc = spawn(CLAUDE_BIN, args, {
+    const proc = spawn(claudeBin, args, {
       cwd,
       env: { ...process.env },
       stdio: ["pipe", "pipe", "pipe"],
+      // On Windows, shell: true lets cmd.exe resolve .cmd shims (e.g. from NVM)
+      shell: process.platform === "win32",
     });
 
+    // On Windows, pipe the full prompt via stdin to avoid shell escaping issues
+    if (useStdin) {
+      proc.stdin.write(fullPrompt);
+      proc.stdin.end();
+    } else {
+      proc.stdin.end();
+    }
+
     proc.stdout.on("data", (data: Buffer) => {
-      rawOutput += data.toString();
+      const chunk = data.toString();
+      rawOutput += chunk;
+
+      if (liveLog) {
+        lineBuffer += chunk;
+        const lines = lineBuffer.split("\n");
+        lineBuffer = lines.pop() ?? "";
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          try {
+            const evt = JSON.parse(line) as StreamEvent;
+            printLiveEvent(evt, mode);
+            // Debug: dump raw tool result events to understand MCP format
+            if (dumpRaw && evt.type === "user") {
+              const debugLine = JSON.stringify(evt).slice(0, 500);
+              process.stdout.write(`    ${C.yellow}[RAW] ${debugLine}${C.reset}\n`);
+            }
+          } catch {
+            // partial or non-JSON line
+          }
+        }
+      }
     });
 
     proc.stderr.on("data", (data: Buffer) => {
@@ -432,17 +653,30 @@ function runTrial(prompt: string, cwd: string): Promise<TrialResult> {
         return;
       }
 
+      // Debug: dump raw output when result looks empty
       const parsed = parseStreamOutput(rawOutput);
-
+      if (!parsed.result && parsed.toolCalls.length === 0) {
+        const debugPath = join(RESULTS_DIR, `debug-${Date.now()}.txt`);
+        const debugContent = [
+          `=== EXIT CODE: ${code} ===`,
+          `=== STDOUT (${rawOutput.length} chars) ===`,
+          rawOutput.slice(0, 5000),
+          `=== STDERR (${stderrOutput.length} chars) ===`,
+          stderrOutput.slice(0, 3000),
+        ].join("\n");
+        writeFileSync(debugPath, debugContent);
+        console.log(`    ⚠ Empty result — debug dump: ${debugPath}`);
+      }
       const filesAccessed = extractFilesAccessed(parsed.toolCalls);
       const terraformCommands = extractTerraformCommands(parsed.toolCalls);
+      const mcpToolsUsed = extractMcpTools(parsed.toolCalls);
       const totalToolOutputChars = parsed.toolCalls.reduce(
         (sum, tc) => sum + tc.output_chars,
         0
       );
 
       resolvePromise({
-        trial: 0, // set by caller
+        trial: 0,
         answer: parsed.result,
         tokens_in: parsed.tokens_in,
         tokens_out: parsed.tokens_out,
@@ -454,6 +688,7 @@ function runTrial(prompt: string, cwd: string): Promise<TrialResult> {
         stop_reason: parsed.stop_reason,
         files_accessed: filesAccessed,
         terraform_commands: terraformCommands,
+        mcp_tools_used: mcpToolsUsed,
         total_tool_output_chars: totalToolOutputChars,
       });
     });
@@ -463,37 +698,52 @@ function runTrial(prompt: string, cwd: string): Promise<TrialResult> {
 // ─── Main ────────────────────────────────────────────────────────────────────
 
 async function main() {
-  // Parse CLI args
   const args = process.argv.slice(2);
   const getArg = (flag: string): string | undefined => {
     const idx = args.indexOf(flag);
     return idx !== -1 ? args[idx + 1] : undefined;
   };
 
-  const mode = getArg("--mode") ?? "raw";
+  const mode = (getArg("--mode") ?? "raw") as Mode;
   const trialsPerPrompt = parseInt(getArg("--trials") ?? "3", 10);
   const promptFilter = getArg("--prompt")
     ? parseInt(getArg("--prompt")!, 10)
     : undefined;
+  const liveLog = args.includes("--live");
+  const dumpRaw = args.includes("--dump-raw");
+  const unified = args.includes("--unified");
 
-  if (mode !== "raw") {
-    console.error(
-      "Only --mode raw is implemented. MCP mode is a future addition."
-    );
+  if (mode !== "raw" && mode !== "mcp") {
+    console.error(`Unknown mode: ${mode}. Use --mode raw or --mode mcp`);
     process.exit(1);
   }
 
-  // Verify Claude CLI exists
-  if (!existsSync(CLAUDE_BIN)) {
-    console.error(`Claude CLI not found at: ${CLAUDE_BIN}`);
+  if (unified && mode !== "mcp") {
+    console.error(`--unified only works with --mode mcp`);
+    process.exit(1);
+  }
+
+  if (mode === "mcp" && !existsSync(MCP_SERVER_BIN)) {
+    console.error(`MCP server not built. Run 'npm run build' first.`);
+    console.error(`Expected: ${MCP_SERVER_BIN}`);
+    process.exit(1);
+  }
+
+  // Detect Claude binary
+  let claudeBin: string;
+  try {
+    claudeBin = findClaudeBin();
+  } catch (err) {
+    console.error((err as Error).message);
     process.exit(1);
   }
 
   // Get CLI version
   let cliVersion = "unknown";
   try {
-    cliVersion = execSync(`"${CLAUDE_BIN}" --version`, {
+    cliVersion = execSync(`claude --version`, {
       encoding: "utf-8",
+      shell: true,
     }).trim();
   } catch {
     // ignore
@@ -528,103 +778,146 @@ async function main() {
     process.exit(1);
   }
 
-  console.log(`\n=== Baseline Experiment Runner (CLI Mode) ===`);
-  console.log(`Mode: ${mode}`);
-  console.log(`Model: ${MODEL}`);
-  console.log(`CLI: ${cliVersion}`);
-  console.log(`Prompts: ${prompts.length} (${trialsPerPrompt} trials each)`);
-  console.log(`Infra: ${infraDir}`);
-  console.log(`Total CLI invocations: ${prompts.length * trialsPerPrompt}`);
-  console.log(`Max budget per prompt: $${MAX_BUDGET_USD}`);
-  console.log(`=============================================\n`);
+  // Write MCP config if needed
+  let mcpConfigPath: string | undefined;
+  if (mode === "mcp") {
+    mcpConfigPath = writeMcpConfig(unified);
+  }
+
+  console.log(`\n${C.bold}=== Baseline Experiment Runner ===${C.reset}`);
+  console.log(`Mode:     ${C.cyan}${mode}${unified ? " (unified)" : ""}${C.reset}`);
+  console.log(`Model:    ${MODEL}`);
+  console.log(`CLI:      ${cliVersion}`);
+  console.log(`Prompts:  ${prompts.length} (${trialsPerPrompt} trial${trialsPerPrompt > 1 ? "s" : ""} each)`);
+  console.log(`Infra:    ${infraDir}`);
+  if (mode === "mcp") {
+    console.log(`Server:   ${MCP_SERVER_BIN}`);
+    console.log(`MCP cfg:  ${mcpConfigPath}`);
+  }
+  console.log(`Live log: ${liveLog ? "on" : "off (add --live to watch tool calls)"}`);
+  console.log(`===================================\n`);
 
   const results: PromptResult[] = [];
 
-  for (const prompt of prompts) {
-    console.log(
-      `[${prompt.id}/${promptsFile.prompts.length}] "${prompt.prompt}" (${prompt.difficulty})`
-    );
+  try {
+    for (const prompt of prompts) {
+      console.log(
+        `${C.bold}[${prompt.id}]${C.reset} "${C.yellow}${prompt.prompt}${C.reset}" ${C.gray}(${prompt.difficulty}, ${prompt.category})${C.reset}`
+      );
 
-    // Create isolated temp directory for this prompt
-    const tempDir = createTempInfraDir(infraDir);
-    console.log(`  Temp dir: ${tempDir}`);
+      const tempDir = createTempInfraDir(infraDir);
+      console.log(`  Temp dir: ${tempDir}`);
 
-    const trials: TrialResult[] = [];
+      const trials: TrialResult[] = [];
 
-    try {
-      for (let t = 1; t <= trialsPerPrompt; t++) {
-        console.log(`  Trial ${t}/${trialsPerPrompt}...`);
+      try {
+        for (let t = 1; t <= trialsPerPrompt; t++) {
+          if (liveLog) {
+            console.log(`\n  ${C.bold}Trial ${t}/${trialsPerPrompt}${C.reset}`);
+          } else {
+            process.stdout.write(`  Trial ${t}/${trialsPerPrompt}... `);
+          }
 
-        try {
-          const trial = await runTrial(prompt.prompt, tempDir);
-          trial.trial = t;
-          trials.push(trial);
+          try {
+            const trial = await runTrial(
+              prompt.prompt,
+              tempDir,
+              mode,
+              claudeBin,
+              mcpConfigPath,
+              liveLog,
+              dumpRaw,
+              unified
+            );
+            trial.trial = t;
+            trials.push(trial);
 
-          console.log(
-            `    -> ${trial.tool_calls} tool calls, ${trial.tokens_in + trial.tokens_out} tokens, ${trial.wall_time_ms}ms, $${trial.cost_usd.toFixed(4)}, stop: ${trial.stop_reason}`
-          );
-          console.log(
-            `    -> Files: [${trial.files_accessed.join(", ")}]`
-          );
-          console.log(
-            `    -> TF cmds: [${trial.terraform_commands.slice(0, 5).join(", ")}${trial.terraform_commands.length > 5 ? "..." : ""}]`
-          );
-        } catch (err) {
-          console.error(
-            `    ERROR in trial ${t}: ${(err as Error).message}`
-          );
-          trials.push({
-            trial: t,
-            answer: `[ERROR: ${(err as Error).message}]`,
-            tokens_in: 0,
-            tokens_out: 0,
-            cost_usd: 0,
-            tool_calls: 0,
-            tool_call_details: [],
-            wall_time_ms: 0,
-            num_turns: 0,
-            stop_reason: "error",
-            files_accessed: [],
-            terraform_commands: [],
-            total_tool_output_chars: 0,
-          });
+            const tokens = trial.tokens_in + trial.tokens_out;
+            const toolDetail =
+              mode === "mcp"
+                ? trial.mcp_tools_used.map((n) => n.replace("mcp__terraform__", "")).join(", ")
+                : trial.terraform_commands.slice(0, 5).join(", ");
+
+            if (liveLog) {
+              console.log(
+                `\n  ${C.bold}Result:${C.reset} ${C.gray}${trial.tool_calls} tools, ${tokens.toLocaleString()} tokens, ${(trial.wall_time_ms / 1000).toFixed(1)}s, $${trial.cost_usd.toFixed(4)}${C.reset}`
+              );
+              if (toolDetail) console.log(`  Tools: ${C.gray}${toolDetail}${C.reset}`);
+              console.log(`\n  ${C.bold}Answer:${C.reset}`);
+              // Print first 600 chars of answer
+              const answerPreview = trial.answer.slice(0, 600);
+              for (const line of answerPreview.split("\n")) {
+                console.log(`    ${line}`);
+              }
+              if (trial.answer.length > 600) console.log(`    ${C.gray}... (${trial.answer.length} chars total)${C.reset}`);
+            } else {
+              console.log(
+                `${trial.tool_calls} tools, ${tokens.toLocaleString()} tokens, ${(trial.wall_time_ms / 1000).toFixed(1)}s, $${trial.cost_usd.toFixed(4)}, stop: ${trial.stop_reason}`
+              );
+              if (mode === "raw") {
+                console.log(`    Files: [${trial.files_accessed.join(", ")}]`);
+                console.log(`    TF:    [${trial.terraform_commands.slice(0, 5).join(", ")}${trial.terraform_commands.length > 5 ? "..." : ""}]`);
+              } else {
+                console.log(`    MCP:   [${toolDetail}]`);
+              }
+            }
+          } catch (err) {
+            console.error(`\n  ERROR in trial ${t}: ${(err as Error).message}`);
+            trials.push({
+              trial: t,
+              answer: `[ERROR: ${(err as Error).message}]`,
+              tokens_in: 0,
+              tokens_out: 0,
+              cost_usd: 0,
+              tool_calls: 0,
+              tool_call_details: [],
+              wall_time_ms: 0,
+              num_turns: 0,
+              stop_reason: "error",
+              files_accessed: [],
+              terraform_commands: [],
+              mcp_tools_used: [],
+              total_tool_output_chars: 0,
+            });
+          }
+
+          cleanupClaude(tempDir);
+
+          if (t < trialsPerPrompt) {
+            await new Promise((r) => setTimeout(r, 5_000));
+          }
         }
-
-        // Clean up .claude directory between trials
-        cleanupClaude(tempDir);
-
-        // Delay between trials to avoid rate limits
-        if (t < trialsPerPrompt) {
-          await new Promise((r) => setTimeout(r, 5_000));
+      } finally {
+        try {
+          rmSync(tempDir, { recursive: true, force: true });
+          if (!liveLog) console.log(`  Cleaned temp dir.`);
+        } catch (err) {
+          console.warn(`  Warning: failed to clean temp dir: ${(err as Error).message}`);
         }
       }
-    } finally {
-      // Always clean up temp directory
-      try {
-        rmSync(tempDir, { recursive: true, force: true });
-        console.log(`  Temp dir cleaned up.`);
-      } catch (err) {
-        console.warn(`  Warning: failed to clean temp dir: ${(err as Error).message}`);
+
+      results.push({
+        id: prompt.id,
+        prompt: prompt.prompt,
+        difficulty: prompt.difficulty,
+        category: prompt.category,
+        scoring: prompt.scoring,
+        trials,
+      });
+
+      if (prompt !== prompts[prompts.length - 1]) {
+        console.log(`  (waiting 5s...)\n`);
+        await new Promise((r) => setTimeout(r, 5_000));
       }
     }
-
-    results.push({
-      id: prompt.id,
-      prompt: prompt.prompt,
-      difficulty: prompt.difficulty,
-      category: prompt.category,
-      scoring: prompt.scoring,
-      trials,
-    });
-
-    // Delay between prompts
-    if (prompt !== prompts[prompts.length - 1]) {
-      console.log(`  (waiting 5s before next prompt...)\n`);
-      await new Promise((r) => setTimeout(r, 5_000));
+  } finally {
+    if (mcpConfigPath && existsSync(mcpConfigPath)) {
+      try { unlinkSync(mcpConfigPath); } catch { /* ignore */ }
     }
   }
 
-  // Build output
+  // ─── Write output ──────────────────────────────────────────────────────────
+
   const runResult: RunResult = {
     metadata: {
       mode,
@@ -638,63 +931,51 @@ async function main() {
     results,
   };
 
-  // Write results
-  const timestamp = new Date()
-    .toISOString()
-    .replace(/[:.]/g, "-")
-    .slice(0, 19);
-  const outPath = join(RESULTS_DIR, `baseline-${timestamp}.json`);
+  const timestamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+  const modeTag = unified ? "mcp-unified" : mode;
+  const outPath = join(RESULTS_DIR, `baseline-${modeTag}-${timestamp}.json`);
   writeFileSync(outPath, JSON.stringify(runResult, null, 2));
-  console.log(`\nResults written to: ${outPath}`);
+  console.log(`\nResults: ${outPath}`);
 
-  // Print summary table
-  console.log(`\n=== Summary ===`);
+  // ─── Summary table ─────────────────────────────────────────────────────────
+
+  console.log(`\n${C.bold}=== Summary ===${C.reset}`);
   console.log(
-    `| # | Prompt                         | Diff | Avg Tokens | Avg Tools | Avg Time(s) | Avg Cost |`
+    `| # | Prompt                             | Diff   | Avg Tokens | Tools | Time(s) | Cost    |`
   );
   console.log(
-    `|---|--------------------------------|------|------------|-----------|-------------|----------|`
+    `|---|------------------------------------|----- --|------------|-------|---------|---------|`
   );
 
-  let totalTokens = 0;
-  let totalTools = 0;
-  let totalTime = 0;
-  let totalCost = 0;
+  let totalTokens = 0, totalTools = 0, totalTime = 0, totalCost = 0;
 
   for (const r of results) {
     const avgTokens = Math.round(
-      r.trials.reduce((s, t) => s + t.tokens_in + t.tokens_out, 0) /
-        r.trials.length
+      r.trials.reduce((s, t) => s + t.tokens_in + t.tokens_out, 0) / r.trials.length
     );
     const avgTools = Math.round(
       r.trials.reduce((s, t) => s + t.tool_calls, 0) / r.trials.length
     );
     const avgTime = (
-      r.trials.reduce((s, t) => s + t.wall_time_ms, 0) /
-      r.trials.length /
-      1000
+      r.trials.reduce((s, t) => s + t.wall_time_ms, 0) / r.trials.length / 1000
     ).toFixed(1);
     const avgCost = (
       r.trials.reduce((s, t) => s + t.cost_usd, 0) / r.trials.length
     ).toFixed(4);
 
-    totalTokens += r.trials.reduce(
-      (s, t) => s + t.tokens_in + t.tokens_out,
-      0
-    );
-    totalTools += r.trials.reduce((s, t) => s + t.tool_calls, 0);
-    totalTime += r.trials.reduce((s, t) => s + t.wall_time_ms, 0);
-    totalCost += r.trials.reduce((s, t) => s + t.cost_usd, 0);
+    totalTokens += r.trials.reduce((s, t) => s + t.tokens_in + t.tokens_out, 0);
+    totalTools  += r.trials.reduce((s, t) => s + t.tool_calls, 0);
+    totalTime   += r.trials.reduce((s, t) => s + t.wall_time_ms, 0);
+    totalCost   += r.trials.reduce((s, t) => s + t.cost_usd, 0);
 
-    const shortPrompt =
-      r.prompt.length > 30 ? r.prompt.slice(0, 27) + "..." : r.prompt;
+    const shortP = r.prompt.length > 34 ? r.prompt.slice(0, 31) + "..." : r.prompt;
     console.log(
-      `| ${String(r.id).padStart(1)} | ${shortPrompt.padEnd(30)} | ${r.difficulty.padEnd(4)} | ${String(avgTokens).padStart(10)} | ${String(avgTools).padStart(9)} | ${avgTime.padStart(11)} | $${avgCost.padStart(6)} |`
+      `| ${String(r.id).padStart(1)} | ${shortP.padEnd(34)} | ${r.difficulty.padEnd(6)} | ${String(avgTokens).padStart(10)} | ${String(avgTools).padStart(5)} | ${avgTime.padStart(7)} | $${avgCost} |`
     );
   }
 
   console.log(
-    `| - | TOTAL${" ".repeat(25)} | ---- | ${String(totalTokens).padStart(10)} | ${String(totalTools).padStart(9)} | ${(totalTime / 1000).toFixed(1).padStart(11)} | $${totalCost.toFixed(4).padStart(6)} |`
+    `| - | ${"TOTAL".padEnd(34)} | ${"".padEnd(6)} | ${String(totalTokens).padStart(10)} | ${String(totalTools).padStart(5)} | ${(totalTime / 1000).toFixed(1).padStart(7)} | $${totalCost.toFixed(4)} |`
   );
   console.log();
 }

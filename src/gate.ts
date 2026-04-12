@@ -24,6 +24,7 @@ const TOOL_TIERS: Record<string, GateLevel> = {
   terraform_fmt: "read",
   query_graph: "read",
   get_schema: "read",
+  terraform: "read", // unified single-tool mode
 
   // Write tier — creates/modifies infra
   terraform_apply: "write",

@@ -23,6 +23,25 @@ Query the Terraform dependency graph using GraphQL. Use for:
 - Deployment ordering
 - Cross-module relationship mapping
 
+## Tool Preference — Graph First, Terminal Last
+
+**Prefer graph tools over CLI tools whenever possible.**
+
+- Use query_graph and get_schema for any read or inspection task.
+  These tools work without Terraform being installed, never mutate state,
+  and return structured data the LLM can reason over efficiently.
+- Fall back to terraform_* CLI tools only when the graph cannot answer
+  the question (e.g., live plan output, provider schema, format checking).
+
+**If a CLI tool call is denied or fails with a permissions error:**
+- Do **not** retry it or try a different CLI tool to work around it.
+- Treat denial as the user saying "I do not want you using the terminal for this."
+- Stop and ask the user explicitly: "This requires running a terminal command.
+  Would you like me to proceed, or should I find another way?"
+
+**Never silently fall back** from a denied CLI tool to a different CLI tool.
+Always surface the denial and get explicit user consent before trying again.
+
 ## Recommended Workflow
 
 1. For simple questions ("what resources exist?", "show me the plan"):
@@ -38,6 +57,21 @@ Query the Terraform dependency graph using GraphQL. Use for:
 
 4. For making changes (if write/destroy tools are available):
    Always terraform_plan first, review, then terraform_apply with confirm: true.
+
+## Field Selection (GraphQL)
+
+Not all Resource fields are equal in cost:
+
+| Field | Cost | When to Use |
+|-------|------|-------------|
+| id, shortName, module, resourceType | Minimal | Always safe. Use in every query. |
+| summary { name, arn } | Minimal | When you need a resource's display name or ARN without full state. |
+| tags | Moderate | When filtering by tags or showing tag info for a small set. |
+| dependencies, dependents | Moderate | Relationship queries. Keep depth <= 2 for bulk. |
+| attributes | **Heavy** | Full resource state (40+ keys). Single-resource deep inspection only. |
+
+Rule of thumb: Start with lightweight fields. Add attributes only for single resources
+or very small result sets (limit <= 5).
 
 ## Output Format
 - CLI tools return raw Terraform output as text.

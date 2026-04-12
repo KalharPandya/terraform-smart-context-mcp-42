@@ -88,9 +88,9 @@ export function generateForResource(resourceId: string): PrebuiltResult {
   const name = node.shortName;
 
   queries.push({
-    title: "Resource details",
-    description: `Full state for ${name}`,
-    query: `query ${safeName(name)}Detail {\n  resource(id: "${id}") {\n    id shortName resourceType module\n    attributes\n    tags\n  }\n}`,
+    title: "Resource overview",
+    description: `Key metadata for ${name} (add 'attributes' for full state)`,
+    query: `query ${safeName(name)}Detail {\n  resource(id: "${id}") {\n    id shortName resourceType module\n    summary { name arn }\n    tags\n  }\n}`,
   });
 
   queries.push({

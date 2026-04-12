@@ -21,10 +21,16 @@ export const SDL = /* GraphQL */ `
     shortName: String!
     module: String!
     resourceType: String!
+    summary: ResourceSummary!
     attributes: JSON
     tags: JSON
     dependencies(depth: Int): [DependencyEdge!]!
     dependents(depth: Int): [DependencyEdge!]!
+  }
+
+  type ResourceSummary {
+    name: String!
+    arn: String!
   }
 
   type DependencyEdge {

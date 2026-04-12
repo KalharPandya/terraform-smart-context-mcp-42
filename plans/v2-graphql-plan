@@ -1,0 +1,690 @@
+# Plan: Terraform MCP Server v1 — Gates + CLI Tools + GraphQL DAG
+
+
+
+## Context
+
+
+
+Project 42's MCP server currently has 6 raw CLI wrappers in a single `src/index.ts` file. The v1 redesign adds three capabilities that neither HashiCorp's terraform-mcp-server nor the Terraform CLI provide:
+
+
+
+1. **Intelligence** — GraphQL-queryable dependency DAG built from `terraform show -json`, powered by `graphology`
+
+2. **Guidance** — Compact schema in tool descriptions + scoped `get_schema` with prebuilt queries from the ACTUAL project
+
+3. **Control** — Three-tier gate system (read / write / destroy) controlling what the LLM can see/do
+
+
+
+**Tool count:** 17 total (12 read + 3 write + 2 destroy). Two GraphQL tools replace the 5 purpose-built DAG tools from tool-set-plan.md — simpler, more flexible.
+
+
+
+---
+
+
+
+## 0. MCP Roots — Zero-Config Working Directory
+
+
+
+The MCP protocol has a `roots` capability. When an MCP client (Claude Desktop, Cursor, Claude Code) opens a project, it sends the workspace root to the server automatically. The server reads it — **no `workingDir` parameter needed on every tool call.**
+
+
+
+```typescript
+
+const server = new McpServer({
+
+  name: "terraform-mcp",
+
+  version: "1.0.0",
+
+  capabilities: { roots: { listChanged: true } }
+
+});
+
+```
+
+
+
+**How it works:**
+
+1. Client opens a Terraform project → sends root path to server during `initialize`
+
+2. Server stores the root path as its working directory
+
+3. All tools use this root by default — `workingDir` becomes optional (override only)
+
+4. If the client switches projects (`roots/list_changed` notification), server updates and invalidates the DAG
+
+
+
+**Impact on tool schemas:** Every tool currently has a required `workingDir` param. With roots:
+
+- `workingDir` becomes **optional** with a default of the MCP root
+
+- User can still override per-call for multi-project setups
+
+- Reduces friction: `query_graph(query: "{ summary { ... } }")` instead of `query_graph(workingDir: "C:/projects/infra", query: "...")`
+
+
+
+---
+
+
+
+## File Structure
+
+
+
+```
+
+src/
+
+  index.ts                     # Server bootstrap: reads gate, registers tools, connects transport
+
+  gate.ts                      # Gate config + tool-to-tier mapping
+
+  instructions.ts              # Baked-in LLM guidance string
+
+  terraform/
+
+    cli.ts                     # Extracted runTerraform() + toolResult() helpers
+
+    tools.ts                   # All 15 CLI tool registration functions
+
+  dag/
+
+    types.ts                   # DagNode, DagEdge, TerraformShowJson interfaces
+
+    builder.ts                 # terraform show -json → nodes + edges
+
+    indexes.ts                 # Precomputed Map indexes (byId, byModule, byType, edges)
+
+    graph.ts                   # DagGraph singleton: lazy init, cache, invalidate
+
+  graphql/
+
+    schema.ts                  # SDL string + buildSchema()
+
+    resolvers.ts               # Resolver functions → DAG index lookups
+
+    validation.ts              # Depth/size guards, bare query rejection
+
+    prebuilt.ts                # Generate project-specific example queries from live graph
+
+  tools/
+
+    query_graph.ts             # MCP tool: execute GraphQL with guards (compact schema in description)
+
+    get_schema.ts              # MCP tool: return SDL + scoped prebuilt queries (optional module/resource param)
+
+```
+
+
+
+---
+
+
+
+## 1. Gate System (`src/gate.ts`)
+
+
+
+**Config:** `TERRAFORM_MCP_GATE` env var — `"read"` (default), `"write"`, or `"destroy"`
+
+
+
+Each tier includes all tools from lower tiers. **Enforcement:** Tools above the configured tier are never registered — the LLM can't see them.
+
+
+
+```
+
+Read tier (12 tools) — default, zero infra change:
+
+  terraform_init, terraform_validate, terraform_plan, terraform_show,
+
+  terraform_state_list, terraform_state_show, terraform_output,
+
+  terraform_graph, terraform_providers, terraform_fmt,
+
+  query_graph, get_schema
+
+
+
+Write tier (adds 3 tools) — creates/modifies infra:
+
+  terraform_apply, terraform_import, terraform_state_mv
+
+
+
+Destroy tier (adds 2 tools) — permanently removes infra/state:
+
+  terraform_destroy, terraform_state_rm
+
+```
+
+
+
+**Defense-in-depth:** `terraform_apply` and `terraform_destroy` still require `confirm: true` even when their tier is enabled (existing pattern from `src/index.ts:166`).
+
+
+
+---
+
+
+
+## 2. CLI Tools — 15 Total (`src/terraform/tools.ts`)
+
+
+
+### Existing 6 (extract from `src/index.ts`)
+
+| Tool | Tier | Line in current index.ts |
+
+|------|------|--------------------------|
+
+| `terraform_init` | read | 50 |
+
+| `terraform_validate` | read | 76 |
+
+| `terraform_plan` | read | 99 |
+
+| `terraform_apply` | write | 139 |
+
+| `terraform_state_list` | read | 192 |
+
+| `terraform_output` | read | 218 |
+
+
+
+### New 9 to add
+
+| Tool | Tier | CLI Command | Key params |
+
+|------|------|-------------|------------|
+
+| `terraform_show` | read | `terraform show -json` | `workingDir` |
+
+| `terraform_state_show` | read | `terraform state show <addr>` | `workingDir, address` |
+
+| `terraform_graph` | read | `terraform graph` | `workingDir, type?` |
+
+| `terraform_providers` | read | `terraform providers` | `workingDir` |
+
+| `terraform_fmt` | read | `terraform fmt -check -diff` | `workingDir, check?` |
+
+| `terraform_destroy` | destroy | `terraform destroy -auto-approve` | `workingDir, confirm, target?` |
+
+| `terraform_import` | write | `terraform import <addr> <id>` | `workingDir, address, id` |
+
+| `terraform_state_rm` | destroy | `terraform state rm <addr>` | `workingDir, address, confirm` |
+
+| `terraform_state_mv` | write | `terraform state mv <src> <dst>` | `workingDir, source, destination` |
+
+
+
+### Post-apply DAG rebuild
+
+`terraform_apply` and `terraform_destroy` handlers call `dagGraph.invalidate()` on success, forcing DAG rebuild on next GraphQL query.
+
+
+
+---
+
+
+
+## 3. DAG Engine (`src/dag/`)
+
+
+
+### Data source
+
+`terraform show -json` output (per DECISIONS.md Q3). The `depends_on` arrays on each resource provide all edges.
+
+
+
+### Types (`types.ts`)
+
+- `DagNode`: id, shortName, resourceType, module, **attributes (FULL resource state from terraform show -json — nothing filtered)**, tags, summary
+
+- `DagEdge`: from, to, type ("explicit"), source ("depends_on")
+
+- `DagIndexes`: Domain-specific Map indexes built on top of graphology (see below)
+
+
+
+### Builder (`builder.ts`)
+
+1. Parse JSON → walk `root_module.child_modules` recursively
+
+2. Create DagNode per resource (extract module name from address)
+
+3. For each node: `attributes` = the **entire** `resource.values` object (full state, no filtering)
+
+4. Create DagEdge per `depends_on` entry
+
+5. Add all nodes/edges to the graphology `DirectedGraph` instance
+
+6. Build domain-specific Map indexes on top
+
+7. Return the populated `DagGraph`
+
+
+
+### Graph library: `graphology`
+
+Use `graphology` (+ `graphology-dag`, `graphology-traversal`, `graphology-shortest-path`) for the core graph data structure and algorithms:
+
+- **BFS/DFS traversal** — `graphology-traversal` (well-tested edge cases: cycles, disconnected components)
+
+- **Topological sort** — `graphology-dag` (Kahn's algorithm, handles cycles gracefully)
+
+- **Shortest path** — `graphology-shortest-path` (for `path(from, to)` queries)
+
+- **Fan-out/fan-in** — `graph.outDegree(node)` / `graph.inDegree(node)` (built-in)
+
+
+
+**Domain-specific indexes** (Map lookups) built on top of graphology:
+
+| Index | Type | Used by |
+
+|-------|------|---------|
+
+| `nodesByModule` | `Map<string, string[]>` | `resources(module:)`, `module()`, `deploymentOrder(module:)` |
+
+| `nodesByType` | `Map<string, string[]>` | `resources(type:)` |
+
+| `nodeByShortName` | `Map<string, string[]>` | `resource(id:)` fuzzy resolution |
+
+| `modules` | `Map<string, { count, resources }>` | `modules`, `summary` |
+
+
+
+### Adding new indexes
+
+Process: (1) define the Map type in `types.ts`, (2) add one line to the build loop in `indexes.ts`, (3) add accessor on `DagGraph`. **Cost:** O(n) per index during build, one Map entry per node. At 75-500 resources: <1ms, <50KB. Indexes are essentially free — add them whenever a resolver needs a fast lookup.
+
+
+
+### Graph singleton (`graph.ts`)
+
+- **Lazy init:** First GraphQL call triggers `terraform show -json` + build
+
+- **Cached:** Subsequent calls use cached graph (zero overhead)
+
+- **State hash detection:** Before each query, `fs.statSync` the `.tfstate` file's mtime + size. If changed since last build (e.g., user ran `terraform apply` in another terminal) → auto-invalidate and rebuild. Cost: ~0.1ms per check.
+
+- **Invalidate on apply:** `terraform_apply`/`terraform_destroy` success also triggers explicit invalidation
+
+- Public accessors: `getNode()`, `getNodesByModule()`, `neighbors()`, `outEdges()`, `inEdges()`, etc. (delegates to graphology + domain indexes)
+
+
+
+---
+
+
+
+## 4. GraphQL Layer (`src/graphql/`)
+
+
+
+### Schema (`schema.ts`)
+
+```graphql
+
+type Query {
+
+  resource(id: String!): Resource
+
+  resources(module: String, type: String, limit: Int = 50): ResourceConnection!
+
+  module(name: String!): Module
+
+  modules: [Module!]!
+
+  path(fromId: String!, toId: String!, maxDepth: Int = 10): PathResult
+
+  impact(resourceId: String!, depth: Int = 2): ImpactResult!
+
+  deploymentOrder(module: String): [Resource!]!
+
+  summary: InfraSummary!
+
+}
+
+
+
+type Resource {
+
+  id: String!
+
+  shortName: String!
+
+  module: String!
+
+  resourceType: String!
+
+  attributes: JSON
+
+  dependencies(depth: Int = 1): [DependencyEdge!]!
+
+  dependents(depth: Int = 1): [DependencyEdge!]!
+
+}
+
+# (+ Module, PathResult, ImpactResult, InfraSummary, etc.)
+
+```
+
+
+
+### Resolvers (`resolvers.ts`)
+
+Each resolver reads from DagGraph indexes:
+
+- `resource(id)` → `dagGraph.resolveNode(id)` (tries full ID, then shortName)
+
+- `resources(module, type)` → filter `getAllNodes()` by module/type
+
+- `path(from, to)` → BFS following `edgesFrom`, stop at target or maxDepth
+
+- `impact(resourceId, depth)` → BFS following REVERSE edges (`edgesTo`)
+
+- `deploymentOrder(module)` → filter topologicalOrder by module
+
+
+
+### Validation (`validation.ts`)
+
+- Depth limit: 5 levels
+
+- Node limit: 100 per query (default 50)
+
+- Bare `resources {}` without module/type filter: rejected
+
+- Execution timeout: 5 seconds
+
+
+
+### Prebuilt query generator (`prebuilt.ts`) — KEY DIFFERENTIATOR
+
+When `get_schema` is called, generates ready-to-run queries using REAL resource IDs:
+
+1. **InfraSummary** — always included
+
+2. **Module listings** — top 3 largest modules by resource count
+
+3. **Resource detail** — the node with highest fan-out (most dependents)
+
+4. **Impact analysis** — a node whose destruction cascades (dependents have dependents)
+
+5. **Path finding** — two nodes in different modules with a path between them
+
+6. **Deployment order** — for the largest module
+
+
+
+Example generated output for 75-resource dummy infra:
+
+```graphql
+
+# What depends on the VPC? (12 dependents)
+
+query VpcDependents {
+
+  resource(id: "module.networking.null_resource.vpc") {
+
+    dependents(depth: 1) { resource { id shortName module } depth }
+
+  }
+
+}
+
+```
+
+
+
+---
+
+
+
+## 5. GraphQL Context for LLM — Option C: Compact description + scoped `get_schema`
+
+
+
+Two complementary mechanisms ensure the LLM always knows what's queryable:
+
+
+
+### Layer 1 — Compact schema summary in `query_graph` tool description (always visible)
+
+
+
+The `query_graph` tool description includes a concise summary of all available query root fields. The LLM sees this whenever it sees the tool list — zero extra calls needed:
+
+
+
+```
+
+Tool: query_graph
+
+Description: "Execute a GraphQL query against the Terraform infrastructure DAG.
+
+
+
+Available queries:
+
+  resource(id) → Resource details + dependencies/dependents
+
+  resources(module?, type?, limit?) → Filtered resource list
+
+  module(name) → Module details + resources
+
+  modules → All modules with resource counts
+
+  path(fromId, toId) → Shortest dependency path between two resources
+
+  impact(resourceId, depth?) → What breaks if this resource is destroyed
+
+  deploymentOrder(module?) → Topological build/deploy order
+
+  summary → Resource/module counts and type breakdown
+
+
+
+Constraints: depth limit 5, node limit 100, resources() needs a filter.
+
+Call get_schema for full SDL, constraints, and ready-to-run example queries."
+
+```
+
+
+
+### Layer 2 — `get_schema` with optional scope parameter (on demand)
+
+
+
+`get_schema` takes optional `module` or `resource` parameter to scope the prebuilt queries:
+
+
+
+```
+
+get_schema(workingDir)                                     → Full SDL + ALL prebuilt queries
+
+get_schema(workingDir, module: "networking")                → SDL + prebuilt queries focused on networking
+
+get_schema(workingDir, resource: "...null_resource.vpc")   → SDL + prebuilt queries centered on VPC + neighbors
+
+```
+
+
+
+**Default (no scope):** Returns full SDL + prebuilt queries for the entire infrastructure — summary, top modules, high-fan-out nodes, cross-module paths.
+
+
+
+**Scoped by module:** Returns SDL + prebuilt queries using resources FROM that module — its resources, internal dependencies, cross-module edges, deployment order for that module.
+
+
+
+**Scoped by resource:** Returns SDL + prebuilt queries centered on that resource — its details, direct dependencies, direct dependents, impact analysis, paths to/from key nodes.
+
+
+
+This gives the LLM focused context when it knows what area it's working in, and broad context when it's exploring.
+
+
+
+### Layer 3 — Server instructions (`src/instructions.ts`, baked into MCP server)
+
+
+
+Workflow guide baked into the MCP server's `instructions` option:
+
+- "Use CLI tools for simple terraform operations"
+
+- "Use `query_graph` for dependency analysis, impact, path finding"
+
+- "Call `get_schema` to get ready-to-run example queries for your infrastructure"
+
+- "Scope `get_schema` to a module or resource when you know your area of focus"
+
+
+
+---
+
+
+
+## 6. Dependencies
+
+
+
+**Add:**
+
+- `graphql: ^16.9.0` — reference GraphQL implementation, in-process query engine
+
+- `graphology: ^0.25.4` — core directed graph data structure
+
+- `graphology-dag: ^0.4.1` — topological sort, cycle detection
+
+- `graphology-traversal: ^0.3.1` — BFS, DFS
+
+- `graphology-shortest-path: ^2.1.0` — Dijkstra/unweighted shortest path
+
+
+
+**Keep:** `@modelcontextprotocol/sdk`, `zod`
+
+
+
+**Move to devDeps:** `@anthropic-ai/sdk` (only used by experiments, not the server)
+
+
+
+No HCL parser needed — `terraform show -json` provides all data.
+
+
+
+---
+
+
+
+## 7. Implementation Phases
+
+
+
+| Phase | What | Files | Depends on | Verify |
+
+|-------|------|-------|-----------|--------|
+
+| 1 | **Extract + Gate** — refactor index.ts into modules, add gate system | `gate.ts`, `terraform/cli.ts`, `terraform/tools.ts`, `instructions.ts`, `index.ts` | — | `npm run build` + `test-mcp.mjs` still works |
+
+| 2 | **New CLI tools** — add 9 new terraform command wrappers | `terraform/tools.ts`, `gate.ts`, `index.ts` | Phase 1 | Manual test each against dummy-infra/ |
+
+| 3 | **DAG engine** — parse terraform show -json into graph | `dag/types.ts`, `dag/builder.ts`, `dag/indexes.ts`, `dag/graph.ts` | Phase 1 | Test script: 75 nodes, 400+ edges from dummy-infra |
+
+| 4 | **GraphQL schema + resolvers** — query execution engine | `graphql/schema.ts`, `graphql/resolvers.ts`, `graphql/validation.ts` | Phase 3 | In-process test query returns real data |
+
+| 5 | **Prebuilt queries** — generate project-specific examples | `graphql/prebuilt.ts` | Phase 3+4 | Generated queries contain real addresses |
+
+| 6 | **GraphQL MCP tools** — wire query_graph + get_schema | `tools/query_graph.ts`, `tools/get_schema.ts`, `index.ts` | Phase 4+5 | MCP call get_schema → copy query → query_graph returns data |
+
+| 7 | **Integration** — DAG rebuild on apply, final wiring | `terraform/tools.ts`, `index.ts` | All | Full e2e: init → apply → get_schema → query_graph |
+
+
+
+---
+
+
+
+## 8. Verification — End-to-End Test
+
+
+
+Against `experiments/baseline/dummy-infra/` (75 null_resources across 6 modules):
+
+
+
+### Gate enforcement
+
+1. Start server with `TERRAFORM_MCP_GATE=read` (default)
+
+2. Verify: apply, destroy, import, state_rm, state_mv are NOT listed
+
+3. Start server with `TERRAFORM_MCP_GATE=write`
+
+4. Verify: apply, import, state_mv visible; destroy, state_rm still hidden
+
+5. Start server with `TERRAFORM_MCP_GATE=destroy`
+
+6. Verify: all 17 tools visible
+
+
+
+### CLI tools
+
+7. Call `terraform_init` → success
+
+8. Call `terraform_plan` → shows 75 resources
+
+9. Call `terraform_apply` (gate=write) with `confirm: true` → 75 resources created
+
+
+
+### GraphQL + schema context
+
+10. Call `get_schema()` → see full SDL + prebuilt queries with real resource IDs
+
+11. Call `get_schema(module: "networking")` → see networking-focused prebuilt queries
+
+12. Call `get_schema(resource: "module.networking.null_resource.vpc")` → see VPC-centered queries
+
+13. Copy a prebuilt query → call `query_graph` → get real data
+
+14. Call `query_graph` with impact query → see cascade analysis
+
+15. Call `query_graph` with path query → see dependency chain
+
+
+
+### State hash detection
+
+16. Run `terraform apply` in a SEPARATE terminal (outside MCP)
+
+17. Call `query_graph` → DAG auto-detects stale state, rebuilds from fresh `.tfstate`
+
+
+
+### DAG rebuild on apply
+
+18. Call `terraform_destroy` with `confirm: true` (gate=destroy) → DAG invalidated
+
+19. Call `query_graph` again → DAG rebuilds from fresh state
+

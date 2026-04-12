@@ -21,12 +21,18 @@ Available queries:
   deploymentOrder(module?)            → Topological build/deploy order
   summary                             → Total counts and type breakdown
 
-Resource fields: id, shortName, module, resourceType, attributes (full state), tags
+Resource fields (lightweight — use by default):
+  id, shortName, module, resourceType, summary { name, arn }
   .dependencies(depth?)  → Resources this node depends ON
   .dependents(depth?)    → Resources that depend ON this node
 
+Resource fields (heavy — use only when needed):
+  attributes  → FULL resource state (40+ keys per resource). Use for single-resource
+                inspection. Avoid in multi-resource queries — response size grows ~50x.
+  tags        → Tag map. Moderate size; fine for small result sets.
+
 Constraints: depth limit 5, node limit 100 (default 50), resources() requires module or type filter.
-Call get_schema for the full SDL and ready-to-run example queries built from your infrastructure.`;
+Call get_schema for full SDL, constraints, and ready-to-run example queries built from your infrastructure.`;
 
 export function registerQueryGraph(
   server: McpServer,
