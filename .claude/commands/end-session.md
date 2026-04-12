@@ -159,7 +159,22 @@ git add CHANGELOG.md && git commit -m "chore: update CHANGELOG.md for session"
 
 ---
 
-**8. Show a summary of today's work.**
+**8. Push to remote.**
+
+```bash
+git push origin main
+```
+
+If the push fails (e.g., rejected due to remote changes), run:
+```bash
+git pull --rebase origin main && git push origin main
+```
+
+Do not skip this step — teammates rely on `git pull` to see your context.
+
+---
+
+**9. Show a summary of today's work.**
 
 ```
 git log --oneline -5
@@ -169,6 +184,6 @@ Show me the last 5 commits. This is my summary of what I shipped today.
 
 ---
 
-**9. Confirm clean close.**
+**10. Confirm clean close.**
 
-"Session ended cleanly. Teammates will see your context on their next `git pull`."
+"Session ended cleanly. All changes pushed. Teammates will see your context on their next `git pull`."

@@ -14,9 +14,21 @@ experiments/baseline/dummy-infra/.terraform.lock.hcl
 # Env
 .env
 
-# Experiment debug/partial logs
+# Experiment intermediate/debug artifacts
 experiments/baseline/results/debug-gemini-*.txt
 experiments/baseline/results/*-partial.json
+experiments/baseline/results/baseline-*.json
+experiments/baseline/results/combined-*.json
+experiments/baseline/results/scored-2*.json
+experiments/baseline/results/scored-combined-2026-04-12T01-*.json
+experiments/baseline/results/summary-2*.md
+experiments/baseline/results/summary-combined-2026-04-12T01-*.md
+experiments/baseline/results/gemini-raw-2026-04-12T01-0*.json
+experiments/baseline/results/gemini-raw-2026-04-12T01-1*.json
+experiments/baseline/results/gemini-raw-2026-04-12T02-04-21.json
+experiments/baseline/results/gemini-mcp-2026-04-12T01-*.json
+experiments/baseline/results/report-*.md
+experiments/baseline/report.ts
 
 # Local Claude Code personal config only — commands/ and skills/ are team-shared
 .claude/settings.json
