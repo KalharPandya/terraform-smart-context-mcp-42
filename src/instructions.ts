@@ -2,61 +2,63 @@
 
 export const INSTRUCTIONS = `# Terraform MCP Server — Tool Usage Guide
 
-## Available Tool Categories
+## Tool Mode
 
-### CLI Tools (terraform_*)
-Direct wrappers around Terraform CLI commands. Use for:
-- Initializing projects: terraform_init
-- Validating configuration: terraform_validate
-- Planning changes: terraform_plan
-- Viewing state: terraform_show, terraform_state_list, terraform_state_show
-- Reading outputs: terraform_output
-- Dependency graph (DOT): terraform_graph
-- Provider info: terraform_providers
-- Format check: terraform_fmt
+This server runs in **unified mode** by default: one tool named \`terraform\` with a
+\`type\` parameter selects the operation. If you see individual tools named
+\`query_graph\`, \`get_schema\`, \`terraform_state_list\`, etc., the server is running
+in standard mode (TERRAFORM_MCP_UNIFIED=0) — use those tool names directly instead.
 
-### Infrastructure Graph Tools (query_graph, get_schema)
-Query the Terraform dependency graph using GraphQL. Use for:
-- Understanding what is deployed
-- Finding dependencies and dependents of any resource
-- Impact analysis before changes
-- Deployment ordering
-- Cross-module relationship mapping
+## Unified Mode — Operations via \`type\` Parameter
+
+| type | What It Does |
+|------|-------------|
+| \`schema\` | GraphQL SDL + prebuilt queries scoped to live infra (start here) |
+| \`query\` | Execute a GraphQL query against the dependency DAG |
+| \`state_list\` | List all deployed resources |
+| \`state_show\` | Show one resource's full attributes |
+| \`validate\` | Check configuration syntax |
+| \`plan\` | Preview changes (read-only) |
+| \`show\` | Full state as structured JSON |
+| \`output\` | Retrieve output values |
+| \`graph\` | Graphviz DOT dependency graph |
+| \`providers\` | List required providers |
+| \`fmt\` | Check formatting |
+| \`init\` | Initialise working directory |
+
+Write/destroy operations (apply, import, state_mv, destroy, state_rm) are available
+only when the gate is set to write or destroy tier.
 
 ## Tool Preference — Graph First, Terminal Last
 
-**Prefer graph tools over CLI tools whenever possible.**
+**Prefer \`type:"schema"\` + \`type:"query"\` over CLI operations whenever possible.**
 
-- Use query_graph and get_schema for any read or inspection task.
-  These tools work without Terraform being installed, never mutate state,
+- Graph queries work without Terraform being installed, never mutate state,
   and return structured data the LLM can reason over efficiently.
-- Fall back to terraform_* CLI tools only when the graph cannot answer
-  the question (e.g., live plan output, provider schema, format checking).
+- Fall back to CLI types (plan, show, state_list, etc.) only when the graph
+  cannot answer the question (e.g., live plan output, provider schema).
 
-**If a CLI tool call is denied or fails with a permissions error:**
-- Do **not** retry it or try a different CLI tool to work around it.
+**If a tool call is denied or fails with a permissions error:**
+- Do **not** retry it or try a different operation to work around it.
 - Treat denial as the user saying "I do not want you using the terminal for this."
-- Stop and ask the user explicitly: "This requires running a terminal command.
-  Would you like me to proceed, or should I find another way?"
-
-**Never silently fall back** from a denied CLI tool to a different CLI tool.
-Always surface the denial and get explicit user consent before trying again.
+- Stop and ask: "This requires running a terminal command. Should I proceed?"
 
 ## Recommended Workflow
 
-1. For simple questions ("what resources exist?", "show me the plan"):
-   Use the appropriate terraform_* CLI tool directly.
+1. Call \`terraform(type:"schema", workingDir:"...")\` first.
+   Returns the GraphQL SDL + ready-to-run queries using YOUR actual resource IDs.
+   Scope with \`module\` or \`resource\` param for focused context.
 
-2. For dependency/impact questions ("what depends on X?", "what breaks if I delete Y?"):
-   Use query_graph with the appropriate GraphQL query.
+2. For dependency/impact questions, use \`type:"query"\` with GraphQL:
+   - \`impact(resourceId, depth?)\` — blast radius of destroying a resource
+   - \`path(fromId, toId)\` — shortest dependency path
+   - \`deploymentOrder(module?)\` — topological build order
+   - \`resource(id) { dependents dependencies }\` — direct edges
 
-3. Call get_schema to get:
-   - The full GraphQL schema (SDL)
-   - Ready-to-run example queries using YOUR actual resource IDs
-   - Scope it with a module or resource parameter for focused context
+3. For simple attribute lookups, use \`type:"state_show"\` with the resource address.
 
-4. For making changes (if write/destroy tools are available):
-   Always terraform_plan first, review, then terraform_apply with confirm: true.
+4. For making changes (write/destroy gate only):
+   Always \`type:"plan"\` first, review, then \`type:"apply"\` with confirm: true.
 
 ## Field Selection (GraphQL)
 

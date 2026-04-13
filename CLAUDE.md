@@ -2,8 +2,9 @@
 
 ## Project Purpose
 
-This is an MCP server that parses `.tf` files into a directed acyclic graph (DAG)
-and serves minimal relevant subgraphs to LLMs via MCP tools.
+This is an MCP server that parses Terraform state (`terraform show -json`) into a
+directed acyclic graph (DAG) and serves minimal relevant subgraphs to LLMs via MCP tools.
+HCL (`.tf` file) parsing is deferred to v2 — v1 reads live state only.
 
 **The goal:** reduce LLM context window usage by returning only the slice of
 Terraform infrastructure the LLM actually needs — not the whole graph.

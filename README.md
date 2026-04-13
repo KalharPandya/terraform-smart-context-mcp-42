@@ -131,11 +131,11 @@ The **gate system** controls which tools the LLM can see. Tools above the config
 
 Set the `TERRAFORM_MCP_GATE` environment variable:
 
-| Gate | Tools Visible | Use When |
-|------|--------------|----------|
-| `read` (default) | 12/17 — all read-only tools | Exploring, querying, planning. No infrastructure changes possible. |
-| `write` | 15/17 — adds apply, import, state mv | You want the LLM to create/modify infrastructure. |
-| `destroy` | 17/17 — adds destroy, state rm | You want the LLM to have full control, including deletion. |
+| Gate | Unified mode | Standard mode | Use When |
+|------|-------------|---------------|----------|
+| `read` (default) | 1 tool (`terraform`) | 12 tools — all read-only | Exploring, querying, planning. No infrastructure changes possible. |
+| `write` | 4 tools — adds apply, import, state mv | 15 tools | LLM may create/modify infrastructure. |
+| `destroy` | 6 tools — adds destroy, state rm | 17 tools | LLM has full control including deletion. |
 
 Each tier includes all tools from lower tiers. The default is `read` — safe for exploration.
 
@@ -153,7 +153,52 @@ If the MCP client sends a workspace root via the MCP roots protocol, `workingDir
 
 ---
 
-## Tools (17 total)
+## Tool Modes
+
+### Unified Mode (default)
+
+By default the server registers a **single `terraform` tool** with a `type` parameter. This is the recommended mode — it reduces LLM tool-enumeration overhead and keeps context lean.
+
+```json
+{
+  "mcpServers": {
+    "terraform": {
+      "command": "npx",
+      "args": ["tsx", "<PROJECT_PATH>/src/index.ts"],
+      "env": { "TERRAFORM_MCP_GATE": "read" }
+    }
+  }
+}
+```
+
+The LLM calls one tool, picks the operation via `type`:
+
+| `type` | Operation |
+|--------|-----------|
+| `schema` | GraphQL SDL + prebuilt queries scoped to live infra |
+| `query` | Execute a GraphQL query against the DAG |
+| `state_list` | List deployed resources |
+| `state_show` | Show one resource's attributes |
+| `validate` | Check configuration syntax |
+| `plan` | Preview changes |
+| `show` | Full state as structured JSON |
+| `output` | Retrieve output values |
+| `graph` | Graphviz DOT dependency graph |
+| `providers` | List required providers |
+| `fmt` | Check formatting |
+| `init` | Initialise working directory |
+
+### Standard Mode (`TERRAFORM_MCP_UNIFIED=0`)
+
+Set `TERRAFORM_MCP_UNIFIED=0` to expose **17 individual named tools** instead. Useful for clients where named tool selection matters.
+
+```json
+"env": { "TERRAFORM_MCP_GATE": "read", "TERRAFORM_MCP_UNIFIED": "0" }
+```
+
+---
+
+## Tools (standard mode — 17 total)
 
 ### GraphQL Query Tools (read tier)
 
@@ -291,8 +336,9 @@ Only visible when `TERRAFORM_MCP_GATE=destroy`.
 │  │  └─ prebuilt.ts — generates example queries from live graph │
 │  │                                                      │
 │  └─ tools/                                              │
-│     ├─ query_graph.ts — MCP tool: execute GraphQL       │
-│     └─ get_schema.ts  — MCP tool: SDL + prebuilt queries│
+│     ├─ unified.ts     — MCP tool: single terraform tool │  ← default
+│     ├─ query_graph.ts — MCP tool: execute GraphQL       │  ← standard mode
+│     └─ get_schema.ts  — MCP tool: SDL + prebuilt queries│  ← standard mode
 └─────────────────────────────────────────────────────────┘
 ```
 

@@ -72,12 +72,11 @@ it all. This is the context window overflow problem in action, not a solution to
 | Capability | Claude Code | Project 42 MCP |
 |---|---|---|
 | Run terraform commands | Yes (raw output) | Yes (structured, filtered output) |
-| Get only network resources | No — must read full state | Yes — `list_resources(type="aws_subnet")` |
-| See dependency graph of one resource | No — must parse entire state | Yes — `get_dependencies(resource_id)` |
-| Read plan as clean diff | No — raw plan JSON | Yes — diffed, human-readable summary |
-| Validate cloud CLI auth before starting | No | Yes — startup auth check |
-| Works with GPT, Gemini, Cursor, Copilot | No — Anthropic only | Yes — any MCP-compliant client |
-| Token cost for "what's deployed?" | High (full state in context) | Low (one filtered tool call) |
+| Get only network resources | No — must read full state | Yes — `query_graph` with `resources(module:"networking")` |
+| See dependency graph of one resource | No — must parse entire state | Yes — `impact(resourceId)` or `path(from, to)` via GraphQL |
+| Deployment ordering | No — must trace manually | Yes — `deploymentOrder(module?)` query |
+| Works with GPT, Gemini, Cursor, Codex | No — Anthropic only | Yes — any MCP-compliant client |
+| Token cost for "what's deployed?" | High (full state in context) | Low (one DAG query call) |
 
 The difference is the abstraction layer. Claude Code gives you a terminal.
 Project 42 gives you purpose-built queries. The first floods context.
@@ -87,27 +86,58 @@ The second answers the question.
 
 ## What We Are Building (v1 Scope)
 
-### Infrastructure State Tools
-| Tool | What It Returns |
-|---|---|
-| `list_resources` | Resources filtered by type — never a full state dump |
-| `get_resource_config` | One resource's full configuration |
-| `find_resource_by_tag` | Resources matching a tag, name, or type query |
-| `get_drift_status` | Detected configuration drift on a resource |
+### Primary Interface — Unified Tool (default)
 
-### Terraform CLI Tools
-| Tool | What It Returns |
-|---|---|
-| `tf_plan` | Diffed plan output — clean change summary, not raw JSON |
-| `tf_apply` | Applies changes with explicit confirm gate |
-| `read_logs` | Terraform and provider log access |
+In the default configuration (`TERRAFORM_MCP_UNIFIED=1`), the LLM sees a single
+`terraform` tool with a `type` parameter selecting the operation. This minimises
+tool-enumeration overhead and keeps the LLM focused on queries rather than picking
+between 17 tool names.
 
-### The Abstraction Layer (core design work)
-- Filtered views scoped per resource type — agent never sees full state
-- Dependency graphs as structured edges — not raw JSON
-- Diffed plan output the agent can reason over
-- Pre-authenticated CLI access: server validates cloud CLI auth on startup
-  (AWS, GCP, Azure, or any CLI-configured provider)
+| `type` value | What It Does |
+|---|---|
+| `schema` | Return GraphQL SDL + prebuilt queries scoped to live infrastructure |
+| `query` | Execute a GraphQL query against the dependency DAG |
+| `state_list` | List all deployed resources |
+| `state_show` | Show one resource's full attributes |
+| `plan` | Preview changes (read-only, no side effects) |
+| `validate` | Check configuration syntax |
+| `show` | Full state as structured JSON |
+| `output` | Retrieve output values |
+| `graph` | Graphviz DOT dependency graph |
+| `init` | Initialise working directory |
+
+### DAG Query Layer (GraphQL)
+
+The core abstraction. Parses `terraform show -json` into an in-memory directed graph
+and exposes it via GraphQL — so the agent queries exactly the infrastructure slice it
+needs, not the full state.
+
+| Query | What It Returns |
+|---|---|
+| `resource(id)` | One resource: attributes, tags, dependencies, dependents |
+| `resources(module?, type?)` | Filtered list — never a full state dump |
+| `impact(resourceId, depth?)` | Blast radius — everything that breaks if a resource is destroyed |
+| `path(fromId, toId)` | Shortest dependency path between two resources |
+| `deploymentOrder(module?)` | Topological build/deploy order |
+| `module(name)` | All resources in a module |
+| `summary` | Total counts and type breakdown |
+
+### Access Control — 3-Tier Gate
+
+Tools are gated by the `TERRAFORM_MCP_GATE` environment variable.
+The LLM can only discover and call tools at or below the configured tier.
+
+| Gate | What's Added | Use Case |
+|---|---|---|
+| `read` (default) | Graph queries + read-only CLI tools | Exploration, planning, auditing |
+| `write` | + apply, import, state mv | Controlled infrastructure changes |
+| `destroy` | + destroy, state rm | Full control including deletion |
+
+### Standard Tool Mode (`TERRAFORM_MCP_UNIFIED=0`)
+
+When unified mode is disabled, the server exposes 17 individual named tools:
+2 GraphQL tools (`query_graph`, `get_schema`) + 10 CLI wrappers + 3 write-tier + 2 destroy-tier.
+This is useful for clients that benefit from named tool selection.
 
 ---
 
@@ -115,14 +145,14 @@ The second answers the question.
 
 Given a real Terraform project with 50+ resources:
 
-1. `list_resources(type="aws_instance")` returns only EC2 instances, not the
-   full state, in under 500ms
-2. `get_resource_config(id)` returns one resource's config without the agent
-   seeing any other resource
-3. `tf_plan` returns a clean diff summary the agent can describe in plain English
-   without parsing raw plan JSON
+1. `terraform(type="schema")` returns the GraphQL SDL and live prebuilt queries
+   in under 1s — the agent knows exactly what to query without reading raw state
+2. `terraform(type="query", query="{ impact(resourceId: \"...\") { affected { resource { id } } } }")`
+   returns the blast radius of destroying one resource without the agent
+   seeing any unrelated infrastructure
+3. `terraform(type="plan")` returns Terraform plan output the agent can reason over
 4. The same tools work identically when connected from Claude Desktop,
-   Claude Code, and Cursor
+   Claude Code, Cursor, and Codex CLI
 
 ---
 
