@@ -54,6 +54,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Gemini experiment results: 30 prompts x 2 trials (raw) + 30 prompts x 1 valid trial (MCP). Raw avg score 0.82, MCP avg score 0.30. Raw cost $1.77, MCP cost $0.06.
 - Gemini summarizer (`summarize-all.ts`): scores raw + MCP results, generates combined markdown summary and Chart.js dashboard (`charts/gemini.html`) matching Claude dashboard format.
 - Combined experiment orchestrator (`run-all.ts`): runs full experiment suite across modes with result aggregation.
+- Codex CLI experiment runner (`runner-codex.ts`): headless OpenAI Codex runner mirroring runner.ts — CODEX_HOME isolation per trial, AGENTS.md system prompt injection, JSONL event parser for Codex item.completed schema, same TrialResult shape as Claude runner for scorer compatibility.
+- Parallel experiment launcher (`run-experiment.ts`): spawns raw and mcp Codex runners simultaneously as child processes with per-mode log files under `experiments/baseline/logs/`.
+- Comparison visualizer (`compare.ts`): reads codex-raw + codex-mcp result files and generates a self-contained Chart.js HTML dashboard (6 charts: tokens/time/tools per prompt, by difficulty, by category, parity scatter) plus a markdown report with copyable comparison tables and auto-generated key findings.
+- Codex experiment results (30 prompts × 2 trials × 2 modes, gpt-5.4, Codex CLI 0.120.0): MCP is 39% faster avg (67s vs 110s), -4.8% token delta overall. MCP wins on cross-module (-33%), dependency-direct (-28%), impact-analysis (-47% to -62%). MCP loses on deployment-order (+70%).
 
 ### Changed
 - `src/index.ts` refactored from monolithic 6-tool file into modular bootstrap: reads gate, iterates tool registrations, wires DAG invalidation.
