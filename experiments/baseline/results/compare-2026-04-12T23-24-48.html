@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Codex: Raw vs MCP — Experiment Results</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f172a; color: #e2e8f0; }
+  header { background: #1e293b; padding: 24px 32px; border-bottom: 1px solid #334155; }
+  header h1 { font-size: 1.5rem; font-weight: 700; color: #f1f5f9; }
+  header p { color: #94a3b8; font-size: 0.85rem; margin-top: 4px; }
+  .cards { display: flex; flex-wrap: wrap; gap: 12px; padding: 20px 32px; background: #1e293b; border-bottom: 1px solid #334155; }
+  .card { background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 12px 18px; min-width: 140px; }
+  .card .label { font-size: 0.7rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }
+  .card .value { font-size: 1.2rem; font-weight: 600; color: #f1f5f9; margin-top: 2px; }
+  .card .sub { font-size: 0.75rem; color: #94a3b8; margin-top: 2px; }
+  .card.win .value { color: #22c55e; }
+  .card.loss .value { color: #ef4444; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; padding: 24px 32px; }
+  .chart-box { background: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 20px; }
+  .chart-box h2 { font-size: 0.9rem; font-weight: 600; color: #cbd5e1; margin-bottom: 14px; }
+  .chart-box.full { grid-column: 1 / -1; }
+  canvas { max-height: 320px; }
+  .legend { display: flex; gap: 16px; margin-bottom: 8px; font-size: 0.75rem; color: #94a3b8; }
+  .legend span { display: flex; align-items: center; gap: 4px; }
+  .dot { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+  .md-section { padding: 24px 32px 32px; }
+  .md-section h2 { font-size: 0.95rem; font-weight: 600; color: #cbd5e1; margin-bottom: 10px; }
+  .md-section p { font-size: 0.8rem; color: #64748b; margin-bottom: 10px; }
+  .md-copy-btn { background: #334155; color: #e2e8f0; border: 1px solid #475569; border-radius: 6px; padding: 6px 14px; font-size: 0.8rem; cursor: pointer; margin-bottom: 10px; }
+  .md-copy-btn:hover { background: #475569; }
+  textarea.md-box { width: 100%; height: 520px; background: #1e293b; color: #e2e8f0; border: 1px solid #334155; border-radius: 8px; padding: 16px; font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace; font-size: 0.78rem; line-height: 1.6; resize: vertical; outline: none; }
+  footer { text-align: center; padding: 20px; color: #475569; font-size: 0.8rem; border-top: 1px solid #1e293b; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Codex — Raw CLI vs MCP · Experiment Results</h1>
+  <p>
+    Model: <strong>gpt-5.4</strong> &nbsp;|&nbsp;
+    Codex: <strong>codex-cli 0.120.0</strong> &nbsp;|&nbsp;
+    Prompts: <strong>30</strong> × 2 trials &nbsp;|&nbsp;
+    Raw: <strong>codex-raw-2026-04-12T04-00-57.json</strong> &nbsp;|&nbsp;
+    MCP: <strong>codex-mcp-2026-04-12T03-18-06.json</strong>
+  </p>
+</header>
+
+<div class="cards">
+  <div class="card">
+    <div class="label">Total Raw Tokens</div>
+    <div class="value">5,236,957</div>
+    <div class="sub">60 trials</div>
+  </div>
+  <div class="card">
+    <div class="label">Total MCP Tokens</div>
+    <div class="value">4,985,258</div>
+    <div class="sub">60 trials</div>
+  </div>
+  <div class="card win">
+    <div class="label">Token Delta (MCP−Raw)</div>
+    <div class="value">-251,699</div>
+    <div class="sub">-4.8%</div>
+  </div>
+  <div class="card">
+    <div class="label">Avg Time Raw</div>
+    <div class="value">109.6s</div>
+    <div class="sub">per prompt avg</div>
+  </div>
+  <div class="card">
+    <div class="label">Avg Time MCP</div>
+    <div class="value">66.7s</div>
+    <div class="sub">per prompt avg</div>
+  </div>
+  <div class="card">
+    <div class="label">Avg Tool Calls Raw</div>
+    <div class="value">10.0</div>
+  </div>
+  <div class="card">
+    <div class="label">Avg Tool Calls MCP</div>
+    <div class="value">4.0</div>
+  </div>
+</div>
+
+<div class="grid">
+
+  <!-- Chart 1: Token Usage per Prompt -->
+  <div class="chart-box full">
+    <h2>Token Usage per Prompt — Raw vs MCP (avg across 2 trials)</h2>
+    <div class="legend">
+      <span><span class="dot" style="background:#3b82f6"></span> Raw</span>
+      <span><span class="dot" style="background:#a855f7"></span> MCP</span>
+      <span><span class="dot" style="background:#22c55e"></span> Easy</span>
+      <span><span class="dot" style="background:#f59e0b"></span> Medium</span>
+      <span><span class="dot" style="background:#ef4444"></span> Hard</span>
+    </div>
+    <canvas id="chart1"></canvas>
+  </div>
+
+  <!-- Chart 2: Wall Time per Prompt -->
+  <div class="chart-box full">
+    <h2>Wall Time per Prompt (seconds) — Raw vs MCP</h2>
+    <canvas id="chart2"></canvas>
+  </div>
+
+  <!-- Chart 3: Tool Calls per Prompt -->
+  <div class="chart-box full">
+    <h2>Tool Calls per Prompt — Raw vs MCP</h2>
+    <canvas id="chart3"></canvas>
+  </div>
+
+  <!-- Chart 4: By Difficulty -->
+  <div class="chart-box">
+    <h2>Avg Tokens by Difficulty</h2>
+    <canvas id="chart4"></canvas>
+  </div>
+
+  <!-- Chart 5: By Category -->
+  <div class="chart-box">
+    <h2>Avg Tokens by Category (sorted by Raw desc)</h2>
+    <canvas id="chart5"></canvas>
+  </div>
+
+  <!-- Chart 6: Scatter -->
+  <div class="chart-box full">
+    <h2>Token Parity Scatter — Raw (X) vs MCP (Y) · below diagonal = MCP cheaper</h2>
+    <canvas id="chart6" style="max-height:420px"></canvas>
+  </div>
+
+</div>
+
+<div class="md-section">
+  <h2>Markdown Report — Copy into poster / doc</h2>
+  <p>Plain markdown text. Select all and copy, or use the button.</p>
+  <button class="md-copy-btn" onclick="copyMd()">Copy all</button>
+  <textarea class="md-box" id="mdBox" readonly># Codex Experiment — Raw vs MCP Comparison
+**Generated:** 2026-04-12 23:24:48  
+**Model:** gpt-5.4 · **Codex:** codex-cli 0.120.0  
+**Raw file:** `codex-raw-2026-04-12T04-00-57.json`  
+**MCP file:** `codex-mcp-2026-04-12T03-18-06.json`
+
+## Table 1 — Full Comparison (30 prompts × avg 2 trials)
+
+| #   | Prompt                                     | Diff   | Category           | Raw Tok    | MCP Tok    | Δ Tok     | Δ%     | Raw Tools | MCP Tools | Raw s   | MCP s   |
+|-----|--------------------------------------------|--------|--------------------|------------|------------|------------|---------|-----------|-----------|---------|---------|
+| 1   | What is the CIDR block of the VPC?         | easy   | attribute-lookup   | 42,926     | **38,660**     | -4,266     | -9.9%   | 6.0       | 2.0       | 48.9    | 23.1    |
+| 2   | What is the public IP of the bastion host? | easy   | attribute-lookup   | **33,456**     | 53,617     | +20,162    | 🔴 +60.3% | 4.0       | 3.0       | 38.0    | 28.4    |
+| 3   | What database engine and port does the ... | easy   | attribute-lookup   | **43,111**     | 70,950     | +27,839    | 🔴 +64.6% | 5.0       | 4.0       | 49.8    | 38.9    |
+| 4   | List all six modules in the infrastruct... | easy   | enumeration        | **37,702**     | 38,029     | +327       | +0.9%   | 3.5       | 2.0       | 43.6    | 24.1    |
+| 5   | List all subnets and their availability... | easy   | enumeration        | 77,113     | **46,550**     | -30,563    | 🟢 **-39.6%** | 12.5      | 2.0       | 112.4   | 38.1    |
+| 6   | How many resources are there in total? ... | easy   | inventory          | **23,534**     | 38,155     | +14,622    | 🔴 +62.1% | 1.0       | 2.0       | 30.9    | 28.4    |
+| 7   | What are the names of all four security... | easy   | enumeration        | **42,984**     | 45,880     | +2,897     | +6.7%   | 6.5       | 2.0       | 54.4    | 25.9    |
+| 8   | What is the Redis cache engine version ... | easy   | attribute-lookup   | **42,380**     | 80,538     | +38,158    | 🔴 **+90.0%** | 5.0       | 5.0       | 50.1    | 46.4    |
+| 9   | What resources directly depend on the VPC? | medium | dependency-direct  | 69,828     | **42,123**     | -27,704    | 🟢 **-39.7%** | 7.0       | 2.0       | 85.1    | 42.9    |
+| 10  | What resources directly depend on the ALB? | medium | dependency-direct  | 84,622     | **60,038**     | -24,584    | 🟢 -29.1% | 9.5       | 3.0       | 98.5    | 36.4    |
+| 11  | Which resources in the compute module r... | medium | dependency-direct  | 95,281     | **54,132**     | -41,149    | 🟢 **-43.2%** | 8.5       | 3.0       | 96.7    | 38.5    |
+| 12  | Which resources reference the SNS topic?   | medium | dependency-direct  | **70,192**     | 70,448     | +257       | +0.4%   | 10.0      | 4.0       | 94.6    | 47.1    |
+| 13  | List all security group rules that allo... | medium | security-filter    | 78,940     | **65,768**     | -13,172    | 🟢 -16.7% | 11.0      | 3.5       | 102.5   | 59.1    |
+| 14  | List all resources in the database modu... | medium | dependency-direct  | 53,751     | **41,642**     | -12,108    | 🟢 -22.5% | 4.0       | 2.0       | 89.8    | 29.5    |
+| 15  | What modules does the monitoring module... | medium | cross-module       | **41,123**     | 43,159     | +2,036     | +5.0%   | 4.0       | 2.0       | 53.9    | 34.3    |
+| 16  | What ports are exposed by each security... | medium | security-filter    | **59,797**     | 75,179     | +15,383    | 🔴 +25.7% | 10.0      | 2.5       | 88.4    | 58.1    |
+| 17  | List all resources that have encryption... | medium | security-filter    | **133,189**    | 158,794    | +25,605    | +19.2%  | 16.0      | 5.5       | 141.1   | 125.9   |
+| 18  | What is the correct deployment order fo... | medium | deployment-order   | 55,102     | **51,941**     | -3,161     | -5.7%   | 7.5       | 3.0       | 96.4    | 35.4    |
+| 19  | Trace the full dependency chain from th... | **hard**   | dependency-chain   | 219,139    | **146,672**    | -72,467    | 🟢 **-33.1%** | 22.0      | 7.0       | 249.7   | 139.7   |
+| 20  | If I destroy the RDS primary instance, ... | **hard**   | impact-analysis    | 144,452    | **77,014**     | -67,437    | 🟢 **-46.7%** | 13.5      | 4.0       | 157.6   | 59.0    |
+| 21  | If I destroy sg_web, what resources acr... | **hard**   | impact-analysis    | 145,299    | **54,909**     | -90,390    | 🟢 **-62.2%** | 15.0      | 3.0       | 186.9   | 42.9    |
+| 22  | What is the correct deployment order fo... | **hard**   | deployment-order   | **92,441**     | 199,063    | +106,622   | 🔴 **+115.3%** | 9.5       | 8.5       | 134.3   | 191.4   |
+| 23  | Which module outputs does the compute m... | **hard**   | cross-module       | 64,790     | **48,666**     | -16,123    | 🟢 -24.9% | 9.5       | 2.0       | 116.2   | 41.4    |
+| 24  | Trace the dependency path from the Clou... | **hard**   | dependency-chain   | 116,679    | **59,625**     | -57,053    | 🟢 **-48.9%** | 13.5      | 3.0       | 145.8   | 36.3    |
+| 25  | If the NAT gateway fails, which resourc... | **hard**   | impact-analysis    | **145,004**    | 286,557    | +141,554   | 🔴 **+97.6%** | 16.0      | 15.0      | 185.1   | 197.3   |
+| 26  | What Terraform resources would I need t... | **hard**   | planning           | 127,818    | **117,454**    | -10,364    | -8.1%   | 13.5      | 5.5       | 157.9   | 133.4   |
+| 27  | What is the full dependency chain from ... | **hard**   | dependency-chain   | 97,710     | **75,958**     | -21,752    | 🟢 -22.3% | 10.0      | 4.0       | 96.2    | 43.2    |
+| 28  | Which resources are leaf nodes (nothing... | **hard**   | dependency-direct  | 63,723     | **44,809**     | -18,913    | 🟢 -29.7% | 7.5       | 2.0       | 84.3    | 30.6    |
+| 29  | Compare the web tier and app tier deplo... | **hard**   | cross-module       | 154,115    | **81,950**     | -72,165    | 🟢 **-46.8%** | 18.0      | 4.0       | 179.0   | 95.2    |
+| 30  | If I need to rotate the RDS credentials... | **hard**   | dependency-chain   | **162,286**    | 224,354    | +62,068    | 🔴 +38.2% | 22.0      | 9.0       | 218.7   | 229.6   |
+
+## Table 2 — By Difficulty
+
+| Difficulty | N   | Raw Avg Tok | MCP Avg Tok | Δ%     | Raw Tools | MCP Tools | Raw s   | MCP s   |
+|------------|-----|-------------|-------------|---------|-----------|-----------|---------|---------|
+| easy       | 8   | **42,901**      | 51,547      | 🔴 +20.2% | 5.4       | 2.8       | 53.5    | 31.7    |
+| medium     | 10  | 74,182      | **66,322**      | 🟢 -10.6% | 8.8       | 3.0       | 94.7    | 50.7    |
+| **hard**       | 12  | 127,788     | **118,086**     | -7.6%   | 14.2      | 5.6       | 159.3   | 103.3   |
+
+## Table 3 — By Category (sorted by Raw Avg Tokens desc)
+
+| Category           | N   | Raw Avg Tok | MCP Avg Tok | Δ%     | Raw Tools | MCP Tools |
+|--------------------|-----|-------------|-------------|---------|-----------|-----------|
+| dependency-chain   | 4   | 148,953     | **126,652**     | 🟢 -15.0% | 16.9      | 5.8       |
+| impact-analysis    | 3   | 144,918     | **139,493**     | -3.7%   | 14.8      | 7.3       |
+| planning           | 1   | 127,818     | **117,454**     | -8.1%   | 13.5      | 5.5       |
+| security-filter    | 3   | **90,642**      | 99,913      | +10.2%  | 12.3      | 3.8       |
+| cross-module       | 3   | 86,676      | **57,925**      | 🟢 **-33.2%** | 10.5      | 2.7       |
+| deployment-order   | 2   | **73,771**      | 125,502     | 🔴 +70.1% | 8.5       | 5.8       |
+| dependency-direct  | 6   | 72,899      | **52,199**      | 🟢 -28.4% | 7.8       | 2.7       |
+| enumeration        | 3   | 52,600      | **43,486**      | 🟢 -17.3% | 7.5       | 2.0       |
+| attribute-lookup   | 4   | **40,468**      | 60,941      | 🔴 +50.6% | 5.0       | 3.5       |
+| inventory          | 1   | **23,534**      | 38,155      | 🔴 +62.1% | 1.0       | 2.0       |
+
+## Key Findings
+
+### Token Usage
+- **Overall:** MCP used -251,699 tokens vs Raw across all 60 trials (-4.8%).
+
+### Top 3 Prompts Where MCP Saved Most Tokens
+- **#21** "If I destroy sg_web, what resources across all modules " — MCP saved 90,390 tokens (-62.2%)
+- **#19** "Trace the full dependency chain from the HTTPS listener" — MCP saved 72,467 tokens (-33.1%)
+- **#29** "Compare the web tier and app tier deployment stacks. Wh" — MCP saved 72,165 tokens (-46.8%)
+
+### Top 3 Prompts Where MCP Cost Most Extra Tokens
+- **#25** "If the NAT gateway fails, which resources and tiers los" — MCP used +141,554 more tokens (+97.6%)
+- **#22** "What is the correct deployment order for the web tier, " — MCP used +106,622 more tokens (+115.3%)
+- **#30** "If I need to rotate the RDS credentials, trace every re" — MCP used +62,068 more tokens (+38.2%)
+
+### Category Insights
+- **Best category for MCP:** `cross-module` — -33.2% token delta vs raw (n=3)
+- **Worst category for MCP:** `deployment-order` — +70.1% more tokens than raw (n=2)
+
+### Speed
+- Raw avg: 109.6s/prompt · MCP avg: 66.7s/prompt (-39.1%)
+</textarea>
+</div>
+
+<footer>Generated by compare.ts · 2026-04-12T23:24:48.389Z</footer>
+
+<script>
+function copyMd() {
+  const el = document.getElementById('mdBox');
+  el.select();
+  document.execCommand('copy');
+  const btn = document.querySelector('.md-copy-btn');
+  btn.textContent = 'Copied!';
+  setTimeout(() => btn.textContent = 'Copy all', 2000);
+}
+</script>
+
+<script>
+const ids = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30];
+const labels = ids.map(i => '#' + i);
+const rawTokens = [42926,33456,43111,37702,77113,23534,42984,42380,69828,84622,95281,70192,78940,53751,41123,59797,133189,55102,219139,144452,145299,92441,64790,116679,145004,127818,97710,63723,154115,162286];
+const mcpTokens = [38660,53617,70950,38029,46550,38155,45880,80538,42123,60038,54132,70448,65768,41642,43159,75179,158794,51941,146672,77014,54909,199063,48666,59625,286557,117454,75958,44809,81950,224354];
+const rawTimes  = [48.9,38,49.8,43.6,112.4,30.9,54.4,50.1,85.1,98.5,96.7,94.6,102.5,89.8,53.9,88.4,141.1,96.4,249.7,157.6,186.9,134.3,116.2,145.8,185.1,157.9,96.2,84.3,179,218.7];
+const mcpTimes  = [23.1,28.4,38.9,24.1,38.1,28.4,25.9,46.4,42.9,36.4,38.5,47.1,59.1,29.5,34.3,58.1,125.9,35.4,139.7,59,42.9,191.4,41.4,36.3,197.3,133.4,43.2,30.6,95.2,229.6];
+const rawTools  = [6,4,5,3.5,12.5,1,6.5,5,7,9.5,8.5,10,11,4,4,10,16,7.5,22,13.5,15,9.5,9.5,13.5,16,13.5,10,7.5,18,22];
+const mcpTools  = [2,3,4,2,2,2,2,5,2,3,3,4,3.5,2,2,2.5,5.5,3,7,4,3,8.5,2,3,15,5.5,4,2,4,9];
+const diffColors = ["#22c55e","#22c55e","#22c55e","#22c55e","#22c55e","#22c55e","#22c55e","#22c55e","#f59e0b","#f59e0b","#f59e0b","#f59e0b","#f59e0b","#f59e0b","#f59e0b","#f59e0b","#f59e0b","#f59e0b","#ef4444","#ef4444","#ef4444","#ef4444","#ef4444","#ef4444","#ef4444","#ef4444","#ef4444","#ef4444","#ef4444","#ef4444"];
+
+const chartDefaults = {
+  animation: false,
+  plugins: { legend: { labels: { color: '#94a3b8' } } },
+  scales: {
+    x: { ticks: { color: '#64748b' }, grid: { color: '#1e293b' } },
+    y: { ticks: { color: '#64748b' }, grid: { color: '#1e293b' } }
+  }
+};
+
+// Chart 1 — Tokens per prompt
+new Chart(document.getElementById('chart1'), {
+  type: 'bar',
+  data: {
+    labels,
+    datasets: [
+      { label: 'Raw', data: rawTokens, backgroundColor: '#3b82f6aa', borderColor: '#3b82f6', borderWidth: 1 },
+      { label: 'MCP', data: mcpTokens, backgroundColor: '#a855f7aa', borderColor: '#a855f7', borderWidth: 1 }
+    ]
+  },
+  options: {
+    ...chartDefaults,
+    plugins: {
+      ...chartDefaults.plugins,
+      tooltip: { callbacks: { afterBody: (items) => {
+        const i = items[0].dataIndex;
+        const delta = mcpTokens[i] - rawTokens[i];
+        const pct = rawTokens[i] > 0 ? ((delta/rawTokens[i])*100).toFixed(1) : '0';
+        return ['Δ: ' + (delta>0?'+':'') + delta.toLocaleString() + ' (' + (delta>0?'+':'') + pct + '%)'];
+      }}}
+    },
+    scales: {
+      x: { ticks: { color: (ctx) => diffColors[ctx.index] ?? '#64748b' }, grid: { color: '#1e293b' } },
+      y: { ticks: { color: '#64748b', callback: v => (v/1000).toFixed(0)+'k' }, grid: { color: '#1e293b' } }
+    }
+  }
+});
+
+// Chart 2 — Time per prompt
+new Chart(document.getElementById('chart2'), {
+  type: 'bar',
+  data: {
+    labels,
+    datasets: [
+      { label: 'Raw (s)', data: rawTimes, backgroundColor: '#0ea5e9aa', borderColor: '#0ea5e9', borderWidth: 1 },
+      { label: 'MCP (s)', data: mcpTimes, backgroundColor: '#8b5cf6aa', borderColor: '#8b5cf6', borderWidth: 1 }
+    ]
+  },
+  options: { ...chartDefaults }
+});
+
+// Chart 3 — Tool calls per prompt
+new Chart(document.getElementById('chart3'), {
+  type: 'bar',
+  data: {
+    labels,
+    datasets: [
+      { label: 'Raw tools', data: rawTools, backgroundColor: '#f97316aa', borderColor: '#f97316', borderWidth: 1 },
+      { label: 'MCP tools', data: mcpTools, backgroundColor: '#10b981aa', borderColor: '#10b981', borderWidth: 1 }
+    ]
+  },
+  options: { ...chartDefaults }
+});
+
+// Chart 4 — By difficulty
+const diffLabels = ["easy","medium","hard"];
+const diffRawTok = [42901,74182,127788];
+const diffMcpTok = [51547,66322,118086];
+new Chart(document.getElementById('chart4'), {
+  type: 'bar',
+  data: {
+    labels: diffLabels,
+    datasets: [
+      { label: 'Raw avg tokens', data: diffRawTok, backgroundColor: '#3b82f6' },
+      { label: 'MCP avg tokens', data: diffMcpTok, backgroundColor: '#a855f7' }
+    ]
+  },
+  options: {
+    ...chartDefaults,
+    plugins: {
+      ...chartDefaults.plugins,
+      tooltip: { callbacks: { afterBody: (items) => {
+        const i = items[0].dataIndex;
+        const d = diffMcpTok[i] - diffRawTok[i];
+        const pct = ((d/diffRawTok[i])*100).toFixed(1);
+        return ['Δ: ' + (d>0?'+':'') + d.toLocaleString() + ' (' + (d>0?'+':'') + pct + '%)'];
+      }}}
+    }
+  }
+});
+
+// Chart 5 — By category (horizontal)
+const catLabels = ["dependency-chain","impact-analysis","planning","security-filter","cross-module","deployment-order","dependency-direct","enumeration","attribute-lookup","inventory"];
+const catRawTok = [148953,144918,127818,90642,86676,73771,72899,52600,40468,23534];
+const catMcpTok = [126652,139493,117454,99913,57925,125502,52199,43486,60941,38155];
+new Chart(document.getElementById('chart5'), {
+  type: 'bar',
+  data: {
+    labels: catLabels,
+    datasets: [
+      { label: 'Raw avg tokens', data: catRawTok, backgroundColor: '#3b82f6' },
+      { label: 'MCP avg tokens', data: catMcpTok, backgroundColor: '#a855f7' }
+    ]
+  },
+  options: {
+    ...chartDefaults,
+    indexAxis: 'y',
+    scales: {
+      x: { ticks: { color: '#64748b', callback: v => (v/1000).toFixed(0)+'k' }, grid: { color: '#1e293b' } },
+      y: { ticks: { color: '#64748b' }, grid: { color: '#1e293b' } }
+    }
+  }
+});
+
+// Chart 6 — Scatter
+const scatterData = [{"x":42926,"y":38660},{"x":33456,"y":53617},{"x":43111,"y":70950},{"x":37702,"y":38029},{"x":77113,"y":46550},{"x":23534,"y":38155},{"x":42984,"y":45880},{"x":42380,"y":80538},{"x":69828,"y":42123},{"x":84622,"y":60038},{"x":95281,"y":54132},{"x":70192,"y":70448},{"x":78940,"y":65768},{"x":53751,"y":41642},{"x":41123,"y":43159},{"x":59797,"y":75179},{"x":133189,"y":158794},{"x":55102,"y":51941},{"x":219139,"y":146672},{"x":144452,"y":77014},{"x":145299,"y":54909},{"x":92441,"y":199063},{"x":64790,"y":48666},{"x":116679,"y":59625},{"x":145004,"y":286557},{"x":127818,"y":117454},{"x":97710,"y":75958},{"x":63723,"y":44809},{"x":154115,"y":81950},{"x":162286,"y":224354}];
+const scatterColors = ["#22c55e","#22c55e","#22c55e","#22c55e","#22c55e","#22c55e","#22c55e","#22c55e","#f59e0b","#f59e0b","#f59e0b","#f59e0b","#f59e0b","#f59e0b","#f59e0b","#f59e0b","#f59e0b","#f59e0b","#ef4444","#ef4444","#ef4444","#ef4444","#ef4444","#ef4444","#ef4444","#ef4444","#ef4444","#ef4444","#ef4444","#ef4444"];
+const scatterLabels = ["#1: What is the CIDR block of the VPC?","#2: What is the public IP of the bastion hos","#3: What database engine and port does the R","#4: List all six modules in the infrastructu","#5: List all subnets and their availability ","#6: How many resources are there in total? B","#7: What are the names of all four security ","#8: What is the Redis cache engine version a","#9: What resources directly depend on the VP","#10: What resources directly depend on the AL","#11: Which resources in the compute module re","#12: Which resources reference the SNS topic?","#13: List all security group rules that allow","#14: List all resources in the database modul","#15: What modules does the monitoring module ","#16: What ports are exposed by each security ","#17: List all resources that have encryption ","#18: What is the correct deployment order for","#19: Trace the full dependency chain from the","#20: If I destroy the RDS primary instance, w","#21: If I destroy sg_web, what resources acro","#22: What is the correct deployment order for","#23: Which module outputs does the compute mo","#24: Trace the dependency path from the Cloud","#25: If the NAT gateway fails, which resource","#26: What Terraform resources would I need to","#27: What is the full dependency chain from t","#28: Which resources are leaf nodes (nothing ","#29: Compare the web tier and app tier deploy","#30: If I need to rotate the RDS credentials,"];
+new Chart(document.getElementById('chart6'), {
+  type: 'scatter',
+  data: {
+    datasets: [{
+      label: 'Prompts',
+      data: scatterData,
+      backgroundColor: scatterColors.map(c => c + 'cc'),
+      borderColor: scatterColors,
+      borderWidth: 1.5,
+      pointRadius: 7,
+      pointHoverRadius: 9
+    }, {
+      label: 'Parity (y=x)',
+      data: [{x:0,y:0},{x:286557,y:286557}],
+      type: 'line',
+      borderColor: '#475569',
+      borderDash: [6,4],
+      borderWidth: 1.5,
+      pointRadius: 0,
+      fill: false
+    }]
+  },
+  options: {
+    ...chartDefaults,
+    plugins: {
+      ...chartDefaults.plugins,
+      tooltip: {
+        callbacks: {
+          label: (ctx) => {
+            if (ctx.datasetIndex !== 0) return null;
+            const i = ctx.dataIndex;
+            const d = ctx.parsed.y - ctx.parsed.x;
+            const pct = ((d/ctx.parsed.x)*100).toFixed(1);
+            return [
+              scatterLabels[i],
+              'Raw: ' + ctx.parsed.x.toLocaleString(),
+              'MCP: ' + ctx.parsed.y.toLocaleString(),
+              'Δ: ' + (d>0?'+':'') + d.toLocaleString() + ' (' + (d>0?'+':'') + pct + '%)'
+            ];
+          }
+        }
+      }
+    },
+    scales: {
+      x: { title: { display: true, text: 'Raw avg tokens', color: '#64748b' }, ticks: { color: '#64748b', callback: v => (v/1000).toFixed(0)+'k' }, grid: { color: '#1e293b' } },
+      y: { title: { display: true, text: 'MCP avg tokens', color: '#64748b' }, ticks: { color: '#64748b', callback: v => (v/1000).toFixed(0)+'k' }, grid: { color: '#1e293b' } }
+    }
+  }
+});
+</script>
+</body>
+</html>
