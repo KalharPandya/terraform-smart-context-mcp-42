@@ -429,9 +429,9 @@ Cost: O(n) per index during build, one Map entry per node. At 75-500 resources: 
 
 The `experiments/` directory contains baseline experiments proving the need for MCP tools.
 
-### Baseline Results
+### Claude Code Baseline (raw CLI, no MCP)
 
-10 prompts x 3 trials, Claude Sonnet via raw CLI only (no MCP tools):
+10 prompts x 3 trials, Claude Sonnet via raw CLI only:
 
 | Difficulty | Accuracy | Avg Tokens | Avg Cost | Avg Tool Calls |
 |-----------|----------|-----------|----------|---------------|
@@ -441,6 +441,26 @@ The `experiments/` directory contains baseline experiments proving the need for 
 | **Overall** | **0.83** | **50K** | **$0.058** | **3.5** |
 
 **Key finding:** Accuracy stays high, but cost scales 3-4x on hard prompts. 97.9% of tokens are input (accumulated tool output resent each turn). See [RAW_Claude_Code_Experiments.md](experiments/baseline/RAW_Claude_Code_Experiments.md) for full analysis.
+
+### Multi-Model Experiments (raw vs MCP, 30 prompts)
+
+Extended experiments comparing raw CLI vs MCP tools across two additional model families, using the full 30-prompt suite (8 easy / 10 medium / 12 hard):
+
+| Model | Prompts | Trials | Results |
+|-------|---------|--------|---------|
+| Gemini CLI (gemini-3-flash-preview) | 30 | 2 | `experiments/baseline/results/summary-combined-*.md` |
+| OpenAI Codex (gpt-5.4) | 30 | 2 | `experiments/baseline/results/compare-*.md` |
+
+**Codex highlights (raw vs MCP token delta by category):**
+
+| Category | Δ Tokens |
+|----------|----------|
+| Cross-module queries | −33% |
+| Dependency-direct queries | −28% |
+| Impact analysis | −4% |
+| Attribute lookups | +51% (MCP overhead for simple queries) |
+
+MCP tools show the largest savings on dependency traversal and multi-hop queries. Simple attribute lookups can cost more with MCP due to graph-build overhead on first call. See `experiments/baseline/results/` for full scored JSON and HTML comparison dashboards.
 
 ---
 
