@@ -6,7 +6,7 @@ Works with **Claude Desktop**, **Claude Code**, **Cursor**, and any MCP-complian
 
 ## Why This Exists
 
-Running `terraform show -json` on a 75-resource project produces 4000+ lines (~33K tokens). An LLM can't process that raw. Our [baseline experiment](experiments/baseline/RAW_Claude_Code_Experiments.md) proved it: hard infrastructure queries cost **$0.10+ and 79K tokens** with raw CLI tools. The same queries through purpose-built MCP tools cost **~$0.01 and ~8K tokens** — a 6x reduction.
+Running `terraform show -json` on a 75-resource project produces 4000+ lines (\~33K tokens). An LLM can't process that raw. Our [baseline experiment](experiments/baseline/RAW_Claude_Code_Experiments.md) proved it: hard infrastructure queries cost **$0.10+ and 79K tokens** with raw CLI tools. The same queries through purpose-built MCP tools cost **\~$0.01 and \~8K tokens** — a 6x reduction.
 
 **What makes this different:**
 
